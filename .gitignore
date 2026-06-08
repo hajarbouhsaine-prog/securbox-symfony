@@ -1,5 +1,8 @@
-
+cat > .gitignore << 'EOF'
 ###> symfony/framework-bundle ###
+/.env
+/.env.dev
+/.env.test
 /.env.local
 /.env.local.php
 /.env.*.local
@@ -18,9 +21,10 @@
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+
 /.idea/
 /.vscode/
 /node_modules/
-.env
-.env.dev
-.env.test
+/.php-cs-fixer.cache
+/.secrets.baseline
+EOF
