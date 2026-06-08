@@ -1,4 +1,3 @@
-cat > .gitignore << 'EOF'
 ###> symfony/framework-bundle ###
 /.env
 /.env.dev
@@ -27,4 +26,3 @@ cat > .gitignore << 'EOF'
 /node_modules/
 /.php-cs-fixer.cache
 /.secrets.baseline
-EOF
