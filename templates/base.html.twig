@@ -310,6 +310,7 @@
             justify-content: space-between; gap: 12px;
             position: sticky; top: 0; z-index: 50;
             transition: background-color 0.25s ease;
+            min-height: 87px;
         }
         .top-bar-actions { display: flex; align-items: center; gap: 12px; }
 
@@ -627,11 +628,11 @@
             <span class="nav-label">Coffres</span>
         </a>
 
-        {# Envoyer — placeholder #}
+        {#  Envoyer — placeholder 
         <a href="#" class="nav-item" style="opacity:0.45; pointer-events:none; cursor:default;" title="Envoyer">
             <i class="far fa-paper-plane nav-icon"></i>
             <span class="nav-label">Envoyer</span>
-        </a>
+        </a>#}
 
         {# Outils #}
         <button class="nav-item" onclick="toggleNav('toolsNav', this)" id="toolsBtn" title="Outils">
@@ -760,13 +761,22 @@
 
         {% set displayName = app.user.email|split('@')[0]|replace({'.': ' ', '_': ' ', '-': ' '})|title %}
         <div class="top-bar-actions">
-            <button class="top-icon-btn" type="button" title="Notifications">
-                <i class="far fa-bell"></i>
-                <span class="notification-dot">3</span>
-            </button>
-            <button class="top-icon-btn secure" type="button" title="Sécurité">
-                <i class="fas fa-shield-alt"></i>
-            </button>
+            {# Notifications #}
+             <div style="position:relative;">
+        <button class="top-icon-btn" type="button" onclick="toggleNotifications()" title="Notifications">
+        <i class="far fa-bell"></i>
+        <span class="notification-dot" id="notifBadge" style="display:none;">0</span>
+    </button>
+    <div id="notifPanel" style="display:none; position:absolute; top:48px; right:0;
+         width:320px; background:var(--bg-card); border:1px solid var(--border-input);
+         border-radius:12px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.3); z-index:999;">
+        <div style="padding:12px 16px; border-bottom:1px solid var(--border-input); display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">Notifications</span>
+        </div>
+        <div id="notifBody" style="max-height:360px; overflow-y:auto;"></div>
+    </div>
+</div>
+            
 
             {# ══ TOGGLE DARK / LIGHT ══ #}
             <button class="top-icon-btn" type="button" onclick="toggleTheme()" id="themeToggleBtn" title="Changer le thème">
@@ -1079,6 +1089,63 @@ function showInlineFlash(message, type) {
     document.body.appendChild(el);
     setTimeout(function() { el.remove(); }, 3000);
 }
+/* ══ NOTIFICATIONS ══ */
+function toggleNotifications() {
+    const panel = document.getElementById('notifPanel');
+    const userMenu = document.getElementById('userMenu');
+    const newMenu = document.getElementById('newMenu');
+    if (userMenu) userMenu.style.display = 'none';
+    if (newMenu) newMenu.style.display = 'none';
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) loadNotifications();
+}
+
+function loadNotifications() {
+    const body = document.getElementById('notifBody');
+    if (!body) return;
+    body.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>';
+    fetch('/notifications', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            updateNotifBadge(data.count);
+            if (!data.notifications || data.notifications.length === 0) {
+                body.innerHTML = '<div style="padding:24px 16px; text-align:center; color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-check-circle" style="font-size:1.5rem; display:block; margin-bottom:8px; color:var(--accent-teal);"></i>Tout est en ordre !</div>';
+                return;
+            }
+            body.innerHTML = data.notifications.map(n => `
+                <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border-subtle); transition:background 0.12s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
+                    <div style="width:32px; height:32px; border-radius:8px; background:${n.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.85rem; color:${n.color};">
+                        <i class="${n.icon}"></i>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.85rem; color:var(--text-primary); font-weight:500; margin-bottom:2px;">${n.title}</div>
+                        <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;">${n.message}</div>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            body.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.85rem;">Erreur de chargement</div>';
+        });
+}
+
+function updateNotifBadge(count) {
+    const badge = document.getElementById('notifBadge');
+    if (!badge) return;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+    const panel = document.getElementById('notifPanel');
+    if (panel && panel.style.display !== 'none') {
+        if (!e.target.closest('#notifPanel') && !e.target.closest('[onclick="toggleNotifications()"]')) {
+            panel.style.display = 'none';
+        }
+    }
+});
 </script>
 </body>
 </html>
