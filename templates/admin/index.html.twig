@@ -1,0 +1,190 @@
+{% extends 'base.html.twig' %}
+{% block title %}Dashboard Admin{% endblock %}
+{% block body %}
+
+<div class="mb-4">
+    <h1 style="color:#e0e0e0; font-size:1.6rem; font-weight:600;">
+        <i class="fas fa-cog me-2" style="color:#6fbfff;"></i>Dashboard Admin
+    </h1>
+    <p style="color:#4b5563; font-size:0.9rem; margin-top:4px;">Vue d'ensemble du système</p>
+</div>
+
+{# Stats Cards #}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; background:#1e3a5f; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-users" style="color:#6fbfff; font-size:1.3rem;"></i>
+            </div>
+            <div>
+                <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">{{ users|length }}</div>
+                <div style="color:#4b5563; font-size:0.82rem;">Utilisateurs</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; background:#1a3a2a; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-shield-alt" style="color:#4dd4ac; font-size:1.3rem;"></i>
+            </div>
+            <div>
+                <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">
+                    {{ users|filter(u => 'ROLE_ADMIN' in u.roles)|length }}
+                </div>
+                <div style="color:#4b5563; font-size:0.82rem;">Administrateurs</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; background:#3a2e10; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-history" style="color:#fbbf24; font-size:1.3rem;"></i>
+            </div>
+            <div>
+                <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">{{ logs|length }}</div>
+                <div style="color:#4b5563; font-size:0.82rem;">Actions récentes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ path('app_admin_logs') }}" style="text-decoration:none;">
+            <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px; transition:0.2s;"
+                 onmouseenter="this.style.borderColor='#6fbfff'" onmouseleave="this.style.borderColor='#2a2f3e'">
+                <div style="width:48px; height:48px; background:#2a1a3a; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fas fa-list" style="color:#c084fc; font-size:1.3rem;"></i>
+                </div>
+                <div>
+                    <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">All</div>
+                    <div style="color:#4b5563; font-size:0.82rem;">Voir tous les logs</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+{# Users Table #}
+<div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; margin-bottom:24px; overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid #2a2f3e; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#e0e0e0; font-weight:600; font-size:0.95rem;">
+            <i class="fas fa-users me-2" style="color:#6fbfff;"></i>Gestion des Utilisateurs
+        </span>
+        <span style="color:#4b5563; font-size:0.82rem;">{{ users|length }} utilisateur(s)</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="border-bottom:1px solid #2a2f3e;">
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Utilisateur</th>
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Rôle</th>
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Statut</th>
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Créé le</th>
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="border-bottom:1px solid #2a2f3e; transition:0.2s;"
+                    onmouseenter="this.style.background='#1a2035'" onmouseleave="this.style.background='transparent'">
+                    <td style="padding:14px 20px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#6fbfff,#4dd4ac); display:flex; align-items:center; justify-content:center; font-weight:700; color:#0f1117; font-size:0.85rem;">
+                                {{ user.email|first|upper }}
+                            </div>
+                            <span style="color:#e0e0e0; font-size:0.9rem;">{{ user.email }}</span>
+                        </div>
+                    </td>
+                    <td style="padding:14px 20px;">
+                        {% if 'ROLE_ADMIN' in user.roles %}
+                            <span style="background:#3a1a1a; color:#f87171; padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600;">Admin</span>
+                        {% else %}
+                            <span style="background:#1e2535; color:#6fbfff; padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600;">User</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px 20px;">
+                        {% if user.isActive %}
+                            <span style="display:flex; align-items:center; gap:6px; color:#4dd4ac; font-size:0.88rem;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#4dd4ac; display:inline-block;"></span>Actif
+                            </span>
+                        {% else %}
+                            <span style="display:flex; align-items:center; gap:6px; color:#4b5563; font-size:0.88rem;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#4b5563; display:inline-block;"></span>Inactif
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px 20px; color:#4b5563; font-size:0.88rem;">
+                        {{ user.createdAt|date('d/m/Y') }}
+                    </td>
+                    <td style="padding:14px 20px;">
+                        <form method="post" action="{{ path('app_admin_toggle_user', {id: user.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                            <button style="background:{{ user.isActive ? '#3a2e10' : '#1a3a2a' }};
+                                           color:{{ user.isActive ? '#fbbf24' : '#4dd4ac' }};
+                                           border:1px solid {{ user.isActive ? '#fbbf24' : '#4dd4ac' }};
+                                           padding:5px 14px; border-radius:6px; font-size:0.82rem; cursor:pointer;">
+                                {{ user.isActive ? 'Désactiver' : 'Activer' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# Logs Table #}
+<div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid #2a2f3e; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#e0e0e0; font-weight:600; font-size:0.95rem;">
+            <i class="fas fa-history me-2" style="color:#fbbf24;"></i>Dernières Actions
+        </span>
+        <a href="{{ path('app_admin_logs') }}" style="color:#6fbfff; font-size:0.82rem; text-decoration:none;">
+            Voir tout <i class="fas fa-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="border-bottom:1px solid #2a2f3e;">
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Utilisateur</th>
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Action</th>
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">IP</th>
+                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr style="border-bottom:1px solid #2a2f3e; transition:0.2s;"
+                    onmouseenter="this.style.background='#1a2035'" onmouseleave="this.style.background='transparent'">
+                    <td style="padding:14px 20px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:28px; height:28px; border-radius:50%; background:#1e2535; display:flex; align-items:center; justify-content:center; font-size:0.75rem; color:#6fbfff; font-weight:700;">
+                                {{ log.user.email|first|upper }}
+                            </div>
+                            <span style="color:#9ca3af; font-size:0.88rem;">{{ log.user.email }}</span>
+                        </div>
+                    </td>
+                    <td style="padding:14px 20px;">
+                        <span style="padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600;
+                            {% if log.action == 'LOGIN' %}background:#1a3a2a; color:#4dd4ac;
+                            {% elseif log.action == 'DELETE' %}background:#3a1a1a; color:#f87171;
+                            {% elseif log.action == 'VIEW' %}background:#1e2535; color:#6fbfff;
+                            {% elseif log.action == 'CREATE' %}background:#1e3a5f; color:#6fbfff;
+                            {% else %}background:#2a1a3a; color:#c084fc;{% endif %}">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td style="padding:14px 20px; color:#4b5563; font-size:0.85rem; font-family:monospace;">
+                        {{ log.ipAddress }}
+                    </td>
+                    <td style="padding:14px 20px; color:#4b5563; font-size:0.85rem;">
+                        {{ log.createdAt|date('d/m/Y H:i') }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+{% block title %}Connexion{% endblock %}
+{% block body %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <div class="auth-logo">🔐 Coffre<span>-Fort</span></div>
+            <p style="color:#4b5563; font-size:0.9rem; margin-top:8px;">Gestionnaire de secrets sécurisé</p>
+        </div>
+        {% if error %}
+            <div class="alert alert-danger mb-3">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Adresse email</label>
+                <input type="email" name="_username" class="form-control"
+                       value="{{ last_username }}" required autofocus
+                       placeholder="votre@email.com">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Mot de passe maître</label>
+                <input type="password" name="_password" class="form-control"
+                       required placeholder="••••••••">
+            </div>
+            <div class="mb-4 form-check">
+                <input type="checkbox" class="form-check-input" id="remember_me" name="_remember_me">
+                <label class="form-check-label" for="remember_me" style="color:#9ca3af;">
+                    Se souvenir de moi
+                </label>
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <button type="submit" class="btn btn-primary w-100 py-2">
+                <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+            </button>
+        </form>
+        <hr style="border-color:#2a2f3e; margin: 24px 0;">
+        <div class="text-center">
+            <a href="{{ path('app_register') }}" style="color:#6fbfff; text-decoration:none;">
+                Créer un compte
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

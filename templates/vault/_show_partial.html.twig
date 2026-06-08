@@ -1,0 +1,168 @@
+{# Partial used for modal display / AJAX fetch #}
+<div style="background:#161b27; border:1px solid #2a2f3e; border-radius:12px; padding:24px; max-width:720px;">
+
+    {% for message in app.flashes('success') %}
+        <div style="background:#0f3723; border:1px solid #124e2c; border-radius:8px; padding:12px 14px; margin-bottom:16px; color:#8dd7a4;">
+            <i class="fas fa-check-circle me-2"></i>{{ message }}
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('error') %}
+        <div style="background:#3b1d1d; border:1px solid #7f1d1d; border-radius:8px; padding:12px 14px; margin-bottom:16px; color:#fca5a5;">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+        </div>
+    {% endfor %}
+
+    {% if decryptedData is null %}
+        <div style="background:#1e2535; border:1px solid #6fbfff; border-radius:8px;
+                    padding:14px 16px; margin-bottom:18px; color:#6fbfff; font-size:0.9rem;">
+            <i class="fas fa-info-circle me-2"></i>
+            Entrez votre mot de passe maître pour déchiffrer ce secret.
+        </div>
+        <form method="post" id="modalMasterForm">
+            <div class="mb-3">
+                <label class="form-label" style="color:#f87171;">
+                    <i class="fas fa-key me-1"></i>Mot de passe maître
+                </label>
+                <input type="password" name="master_password" class="form-control"
+                       placeholder="Votre mot de passe maître" required autofocus>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button type="submit" class="btn btn-primary px-4 py-2">
+                    <i class="fas fa-unlock me-2"></i>Déchiffrer
+                </button>
+                <button type="button" class="btn btn-outline-secondary px-3" onclick="closeItemModal()">Annuler</button>
+            </div>
+        </form>
+    {% else %}
+        {% if decryptedPayload is not null %}
+            <div style="display:grid; gap:18px; margin-bottom:18px;">
+                {% if decryptedPayload.website is defined and decryptedPayload.website %}
+                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
+                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
+                            <i class="fas fa-link me-1"></i>Site web
+                        </div>
+                        <a href="{{ decryptedPayload.website }}" target="_blank" rel="noopener noreferrer"
+                           style="color:#e0e0e0; text-decoration:none; word-break:break-all;">{{ decryptedPayload.website }}</a>
+                    </div>
+                {% endif %}
+
+                {% if decryptedPayload.login is defined and decryptedPayload.login %}
+                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
+                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
+                            <i class="fas fa-user me-1"></i>Login
+                        </div>
+                        <div style="color:#e0e0e0; font-size:0.95rem; word-break:break-all;">{{ decryptedPayload.login }}</div>
+                    </div>
+                {% endif %}
+
+                {% if decryptedPayload.password is defined and decryptedPayload.password %}
+                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
+                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
+                            <i class="fas fa-lock me-1"></i>Mot de passe
+                        </div>
+                        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                            <div style="color:#e0e0e0; font-size:0.95rem; word-break:break-all;">{{ decryptedPayload.password }}</div>
+                            <button type="button" onclick="copyToClipboard('{{ decryptedPayload.password|e('js') }}')"
+                                    style="background:#1e2535; color:#6fbfff; border:1px solid #2a2f3e;
+                                           padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.88rem;">
+                                <i class="fas fa-clone me-1"></i>Copier
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if decryptedPayload is not null and ((decryptedPayload.note is defined and decryptedPayload.note) or (decryptedPayload.notes is defined and decryptedPayload.notes)) %}
+                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
+                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
+                            <i class="fas fa-sticky-note me-1"></i>Notes
+                        </div>
+                        <div style="color:#e0e0e0; font-size:0.95rem; white-space:pre-wrap;">{{ decryptedPayload.note is defined and decryptedPayload.note ? decryptedPayload.note : decryptedPayload.notes }}</div>
+                    </div>
+                {% endif %}
+
+                {% if decryptedPayload is not null and decryptedPayload.attachments is defined and decryptedPayload.attachments is not empty %}
+                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
+                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:12px;">
+                            <i class="fas fa-paperclip me-1"></i>Pièces jointes
+                        </div>
+                        <div style="display:grid; gap:14px;">
+                            {% for attachment in decryptedPayload.attachments %}
+                                <div style="background:#161b27; border:1px solid #25304a; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                                        <div>
+                                            <div style="color:#e0e0e0; font-weight:600;">{{ attachment.name }}</div>
+                                            <div style="color:#9ca3af; font-size:0.82rem;">{{ attachment.type }} · {{ attachment.size }}</div>
+                                        </div>
+                                        <a href="{{ attachment.data }}" download="{{ attachment.name }}"
+                                           style="background:#0f172a; color:#6fbfff; border:1px solid #2a2f3e; padding:8px 14px; border-radius:8px; text-decoration:none; font-size:0.88rem;">
+                                            <i class="fas fa-download me-1"></i>Télécharger
+                                        </a>
+                                    </div>
+                                    {% if attachment.type starts with 'image/' %}
+                                        <img src="{{ attachment.data }}" alt="{{ attachment.name }}" style="max-width:100%; border-radius:8px;" />
+                                    {% elseif attachment.type starts with 'video/' %}
+                                        <video controls style="max-width:100%; border-radius:8px;">
+                                            <source src="{{ attachment.data }}" type="{{ attachment.type }}">
+                                            Votre navigateur ne supporte pas la lecture vidéo.
+                                        </video>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                    <button onclick="copyToClipboard('{{ decryptedData|e('js') }}')"
+                            style="background:#1e2535; color:#6fbfff; border:1px solid #2a2f3e;
+                                   padding:10px 18px; border-radius:8px; cursor:pointer; font-size:0.88rem;">
+                        <i class="fas fa-copy me-2"></i>Copier tout
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary px-3" onclick="closeItemModal()">Fermer</button>
+                </div>
+            </div>
+        {% else %}
+            <div style="background:#1a3a2a; border:1px solid #4dd4ac; border-radius:8px; padding:20px; margin-bottom:18px;">
+                <div style="color:#4dd4ac; font-size:0.8rem; text-transform:uppercase;
+                            letter-spacing:1px; margin-bottom:10px;">
+                    <i class="fas fa-unlock me-2"></i>Données déchiffrées
+                </div>
+                <pre id="modalDecrypted" style="color:#e0e0e0; margin:0; white-space:pre-wrap; font-size:0.95rem;">{{ decryptedData }}</pre>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <button onclick="copyToClipboard(document.getElementById('modalDecrypted').innerText)"
+                        style="background:#1e2535; color:#6fbfff; border:1px solid #2a2f3e;
+                               padding:8px 18px; border-radius:6px; cursor:pointer; font-size:0.88rem;">
+                    <i class="fas fa-copy me-2"></i>Copier
+                </button>
+                <button type="button" class="btn btn-outline-secondary px-3" onclick="closeItemModal()">Fermer</button>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <hr style="border-color:#2a2f3e; margin:18px 0;">
+    <div style="color:#4b5563; font-size:0.8rem;">
+        <i class="fas fa-clock me-1"></i>Créé le {{ secret.createdAt|date('d/m/Y à H:i') }}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copié dans le presse-papier !');
+    });
+}
+
+// If the modal form is submitted, post back to the show route and refresh modal content
+document.getElementById('modalMasterForm')?.addEventListener('submit', function(e){
+    e.preventDefault();
+    const form = this;
+    const action = window._modalSourceUrl || window.location.href;
+    const data = new FormData(form);
+    fetch(action, { method: 'POST', body: data, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.text()).then(html => {
+            const dialog = document.getElementById('itemModalDialogContent');
+            if (dialog) dialog.innerHTML = html;
+        });
+});
+</script>

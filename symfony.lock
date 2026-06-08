@@ -35,6 +35,12 @@
             "migrations/.gitignore"
         ]
     },
+    "phpstan/phpstan": {
+        "version": "2.2",
+        "recipe": {
+            "version": "1.0"
+        }
+    },
     "phpunit/phpunit": {
         "version": "13.1",
         "recipe": {
@@ -289,6 +295,9 @@
         "files": [
             "config/packages/messenger.yaml"
         ]
+    },
+    "symfonycasts/verify-email-bundle": {
+        "version": "v1.18.0"
     },
     "twig/extra-bundle": {
         "version": "v3.24.0"

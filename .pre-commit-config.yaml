@@ -1,0 +1,119 @@
+
+default_stages: [pre-commit]
+
+repos:
+
+  # ── 1. General file hygiene ──────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace        # removes trailing spaces
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer          # ensures files end with a newline
+      - id: check-yaml                 # validates YAML syntax (services.yaml, routes…)
+      - id: check-json                 # validates JSON (importmap deps etc.)
+      - id: check-merge-conflict       # blocks accidental merge-conflict markers
+      - id: check-case-conflict        # catches filename case mismatches (Linux vs macOS)
+      - id: detect-private-key         # blocks real private keys from being committed
+      - id: mixed-line-ending          # enforces LF line endings
+        args: [--fix=lf]
+      - id: check-added-large-files    # warns when a file > 500 KB slips in
+        args: [--maxkb=500]
+      - id: no-commit-to-branch        # prevents direct commits to main/master
+        args: [--branch, main, --branch, master]
+
+  # ── 2. Secret detection ──────────────────────────────────────────
+  # Catches API keys, tokens, DSNs (DATABASE_URL, MAILER_DSN…)
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        # Exclude lock files and fixtures that may contain dummy values
+        exclude: |
+          (?x)^(
+            composer\.lock|
+            package-lock\.json|
+            tests/.*\.sql|
+            migrations/.*\.php
+          )$
+
+  # ── 3. PHP syntax check ──────────────────────────────────────────
+  # Fast built-in linter — catches parse errors before anything else
+  - repo: https://github.com/digitalpulp/pre-commit-php
+    rev: 1.4.0
+    hooks:
+      - id: php-lint
+        files: \.(php)$
+
+  # ── 4. PHP coding standards (PSR-12 + Symfony style) ────────────
+  # PHP-CS-Fixer auto-formats your PHP code.
+  # Requires: composer require --dev friendsofphp/php-cs-fixer
+  - repo: local
+    hooks:
+      - id: php-cs-fixer
+        name: PHP CS Fixer
+        language: system
+        entry: /Users/macbook/.composer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --diff --dry-run
+        # Remove --dry-run above once you're happy → it will auto-fix
+        types: [php]
+        pass_filenames: false
+
+  # ── 5. PHPStan static analysis ───────────────────────────────────
+  # Catches type errors, undefined variables, wrong method calls…
+  # Requires: composer require --dev phpstan/phpstan phpstan/extension-installer
+  #           + phpstan/phpstan-symfony  phpstan/phpstan-doctrine
+  - repo: local
+    hooks:
+      - id: phpstan
+        name: PHPStan
+        language: system
+        entry: vendor/bin/phpstan analyse --memory-limit=256M --no-progress
+        types: [php]
+        pass_filenames: false
+
+  # ── 6. Twig template linting ─────────────────────────────────────
+  # Symfony's built-in Twig linter — catches syntax errors in templates
+  - repo: local
+    hooks:
+      - id: twig-lint
+        name: Twig Lint
+        language: system
+        entry: php bin/console lint:twig templates/
+        pass_filenames: false
+        files: \.twig$
+
+  # ── 7. YAML config linting ───────────────────────────────────────
+  # Symfony's YAML linter validates config/, services.yaml, routes.yaml…
+  - repo: local
+    hooks:
+      - id: symfony-yaml-lint
+        name: Symfony YAML Lint
+        language: system
+        entry: php bin/console lint:yaml config/
+        pass_filenames: false
+        files: \.yaml$
+
+  # ── 8. Container config validation ──────────────────────────────
+  # Validates the Symfony DI container (catches misconfigured services)
+  - repo: local
+    hooks:
+      - id: symfony-container
+        name: Symfony Container Check
+        language: system
+        entry: php bin/console debug:container --no-debug
+        pass_filenames: false
+        always_run: true
+
+  # ── 9. JavaScript / Stimulus controllers ────────────────────────
+  # Basic JS linting for your assets/ folder (Stimulus controllers etc.)
+  # Requires: npm install --save-dev eslint  (or npx eslint --init)
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.27.0
+    hooks:
+      - id: eslint
+        files: ^assets/.*\.js$
+        args: [--fix]
+        additional_dependencies:
+          - eslint@9.27.0
+          - globals@16.2.0

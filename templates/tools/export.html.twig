@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+{% block title %}Export{% endblock %}
+{% block body %}
+<h1>Export</h1>
+<div style="max-width:900px;">
+    <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:12px; padding:18px;">
+        <form method="post">
+            <div style="margin-bottom:12px;">
+                <label class="form-label">Export from (required)</label>
+                <select name="vault" class="form-select">
+                    <option value="all">My vault</option>
+                    {% for col in collections %}
+                    <option value="col_{{ col.id }}">{{ col.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label class="form-label">Format</label>
+                <select name="format" class="form-select">
+                    <option value="json">.json</option>
+                    <option value="csv">.csv</option>
+                    <option value="zip">.zip (with attachments)</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" type="submit">Export</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

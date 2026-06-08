@@ -1,0 +1,160 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le secret - {{ secret.name }}{% endblock %}
+
+{% block body %}
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+
+    {# En-tête avec bouton retour #}
+    <div class="mb-4 d-flex align-items-center gap-3">
+        <a href="{{ path('app_vault_index') }}" style="color: #4b5563; text-decoration: none; font-size: 1.1rem;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 style="color:#e0e0e0; font-size:1.6rem; font-weight:600; margin: 0;">
+            ✏️ Modifier le secret
+        </h1>
+    </div>
+
+    <div style="background: #161b27; border: 1px solid #2a2f3e; border-radius: 12px; padding: 24px;">
+        
+        {# ÉTAPE 1 : Demande du mot de passe maître pour déchiffrer #}
+        {% if step == 'verify' %}
+            <h4 style="color: #e0e0e0; font-size: 1.1rem; margin-bottom: 8px;">Déchiffrement requis</h4>
+            <p style="color: #4b5563; font-size: 0.9rem; margin-bottom: 20px;">
+                Veuillez saisir votre mot de passe maître pour afficher et modifier les données de ce secret.
+            </p>
+
+            <form method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('edit' ~ secret.id) }}">
+                <div class="mb-4">
+                    <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                        Mot de passe maître
+                    </label>
+                    <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px; display:flex; align-items:center;">
+                        <i class="fas fa-lock" style="color:#4b5563; margin-right: 12px;"></i>
+                        <input type="password" name="master_password" required placeholder="Saisissez votre mot de passe maître"
+                               style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" style="padding: 10px; font-weight: 500;">
+                    <i class="fas fa-unlock me-2"></i> Déverrouiller le secret
+                </button>
+            </form>
+
+        {# ÉTAPE 2 : Formulaire de modification une fois déchiffré #}
+        {% else %}
+            <form method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('edit' ~ secret.id) }}">
+                <input type="hidden" name="master_password" value="{{ app.request.request.get('master_password') }}">
+                <input type="hidden" name="update_secret" value="1">
+
+                {# Champ permanent : Nom du secret #}
+                <div class="mb-4">
+                    <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                        Nom de l'élément
+                    </label>
+                    <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
+                        <input type="text" name="name" value="{{ secret.name }}" required
+                               style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+
+                {# STRUCTURE DES CHAMPS SELON LE TYPE #}
+                {% if secret.type == 'password' %}
+                    
+                    {# Champ Identifiant #}
+                    <div class="mb-4">
+                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                            Identifiant
+                        </label>
+                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
+                            <input type="text" id="vault_username" name="username" value=""
+                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
+                        </div>
+                    </div>
+
+                    {# Champ Mot de passe dédié #}
+                    <div class="mb-4">
+                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                            Mot de passe
+                        </label>
+                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
+                            <input type="text" id="vault_password" name="password" value="" required
+                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
+                        </div>
+                    </div>
+
+                    {# Champ URL optionnel #}
+                    <div class="mb-4">
+                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                            Site web (URL)
+                        </label>
+                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
+                            <input type="text" id="vault_website" name="website" value=""
+                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
+                        </div>
+                    </div>
+
+                {% elseif secret.type == 'note' %}
+                    
+                    <div class="mb-4">
+                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                            Contenu de la note sécurisée
+                        </label>
+                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
+                            <textarea name="data" required rows="6"
+                                      style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem; resize: vertical;">{{ decryptedData }}</textarea>
+                        </div>
+                    </div>
+
+                {% else %}
+                    
+                    <div class="mb-4">
+                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                            Données sécurisées
+                        </label>
+                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
+                            <input type="text" name="data" value="{{ decryptedData }}" required
+                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
+                        </div>
+                    </div>
+
+                {% endif %}
+
+                {# Boutons d'action #}
+                <div class="d-flex gap-3 mt-4">
+                    <a href="{{ path('app_vault_index') }}" class="btn btn-outline-secondary w-50" style="padding: 10px;">
+                        Annuler
+                    </a>
+                    <button type="submit" class="btn btn-success w-50" style="padding: 10px; font-weight: 500; background: #4dd4ac; border-color: #4dd4ac; color: #0f131a;">
+                        <i class="fas fa-save me-2"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+
+            {# Script JS Safe pour injecter la chaîne JSON décodée dans le formulaire #}
+            {% if secret.type == 'password' %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        try {
+                            // On récupère en toute sécurité la chaîne JSON brute
+                            const rawData = {{ decryptedData|json_encode|raw }};
+                            const parsedData = JSON.parse(rawData);
+                            
+                            // Injection précise dans chaque champ dédié
+                            if (parsedData.username) document.getElementById('vault_username').value = parsedData.username;
+                            if (parsedData.password) document.getElementById('vault_password').value = parsedData.password;
+                            if (parsedData.website) document.getElementById('vault_website').value = parsedData.website;
+                        } catch (e) {
+                            console.error("Erreur lors du traitement des données du secret:", e);
+                        }
+                    });
+                </script>
+            {% endif %}
+            
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

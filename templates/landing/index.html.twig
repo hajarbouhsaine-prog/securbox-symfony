@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SecurBox — Gestionnaire de secrets sécurisé</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1117;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        /* ── NAVBAR ── */
+        .landing-nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 999;
+            background: rgba(15, 17, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #2a2f3e;
+            padding: 14px 0;
+        }
+        .landing-nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #6fbfff;
+            text-decoration: none;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nav-links { display: flex; align-items: center; gap: 32px; }
+        .nav-links a {
+            color: #9ca3af; text-decoration: none;
+            font-size: 0.9rem; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #e0e0e0; }
+        .nav-cta {
+            display: flex; gap: 12px; align-items: center;
+        }
+        .btn-nav-login {
+            color: #9ca3af; text-decoration: none;
+            font-size: 0.9rem; padding: 8px 16px;
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .btn-nav-login:hover { color: #e0e0e0; background: #1e2535; }
+        .btn-nav-register {
+            background: linear-gradient(135deg, #6fbfff, #4dd4ac);
+            color: #0f1117; font-weight: 600;
+            text-decoration: none; padding: 8px 20px;
+            border-radius: 8px; font-size: 0.9rem;
+            transition: opacity 0.2s;
+        }
+        .btn-nav-register:hover { opacity: 0.88; color: #0f1117; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            padding: 140px 0 80px;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .hero-bg {
+            position: absolute; inset: 0; z-index: 0;
+            background: radial-gradient(ellipse 60% 60% at 50% 30%, rgba(111,191,255,0.15) 0%, transparent 70%),
+                        radial-gradient(ellipse 50% 50% at 50% 70%, rgba(77,212,172,0.08) 0%, transparent 60%);
+        }
+        .hero .container { position: relative; z-index: 1; max-width: 900px; }
+        
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(111,191,255,0.1); border: 1px solid rgba(111,191,255,0.3);
+            color: #6fbfff; font-size: 0.82rem; font-weight: 600;
+            padding: 6px 14px; border-radius: 20px; margin-bottom: 24px;
+            letter-spacing: 0.03em;
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.2rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #e0e0e0, #6fbfff, #4dd4ac, #e0e0e0);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            color: #9ca3af;
+            max-width: 650px;
+            margin: 0 auto 40px auto;
+            line-height: 1.7;
+        }
+        .hero-actions { 
+            display: flex; 
+            gap: 16px; 
+            justify-content: center; 
+            flex-wrap: wrap;
+        }
+        .btn-hero-primary {
+            background: linear-gradient(135deg, #6fbfff, #4dd4ac);
+            color: #0f1117; font-weight: 700;
+            text-decoration: none; padding: 16px 36px;
+            border-radius: 10px; font-size: 1.05rem;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 8px 30px rgba(111,191,255,0.25);
+        }
+        .btn-hero-primary:hover { opacity: 0.9; transform: translateY(-2px); color: #0f1117; }
+        .btn-hero-secondary {
+            background: transparent;
+            color: #9ca3af; font-weight: 600;
+            text-decoration: none; padding: 16px 32px;
+            border-radius: 10px; font-size: 1.05rem;
+            border: 1px solid #2a2f3e;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-hero-secondary:hover { background: #1e2535; color: #e0e0e0; border-color: #6fbfff; transform: translateY(-2px); }
+
+        /* ── STATS ── */
+        .stats-section {
+            padding: 60px 0;
+            border-top: 1px solid #1c2233;
+            border-bottom: 1px solid #1c2233;
+        }
+        .stat-item { text-align: center; }
+        .stat-number {
+            font-size: 2.5rem; font-weight: 800;
+            background: linear-gradient(135deg, #6fbfff, #4dd4ac);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label { color: #6b7280; font-size: 0.88rem; margin-top: 4px; }
+
+        /* ── FEATURES ── */
+        .features-section { padding: 100px 0; }
+        .section-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(77,212,172,0.1); border: 1px solid rgba(77,212,172,0.3);
+            color: #4dd4ac; font-size: 0.78rem; font-weight: 600;
+            padding: 5px 12px; border-radius: 20px; margin-bottom: 16px;
+            letter-spacing: 0.05em; text-transform: uppercase;
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.4rem);
+            font-weight: 700; color: #e0e0e0;
+            margin-bottom: 16px; line-height: 1.2;
+        }
+        .section-sub { color: #6b7280; font-size: 1rem; line-height: 1.7; max-width: 500px; }
+        
+        .feature-card {
+            background: #161b27;
+            border: 1px solid #2a2f3e;
+            border-radius: 12px; padding: 28px;
+            height: 100%;
+            transition: all 0.25s;
+        }
+        .feature-card:hover {
+            border-color: #6fbfff;
+            background: #1a2035;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(111,191,255,0.1);
+        }
+        .feature-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; margin-bottom: 18px;
+        }
+        .feature-title { font-size: 1rem; font-weight: 600; color: #e0e0e0; margin-bottom: 10px; }
+        .feature-desc { color: #6b7280; font-size: 0.88rem; line-height: 1.65; }
+
+        /* ── COMMENT CA MARCHE ── */
+        .how-section { padding: 100px 0; background: #0a0d13; }
+        .step-number {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, #6fbfff, #4dd4ac);
+            color: #0f1117; font-weight: 800; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 16px; flex-shrink: 0;
+        }
+        .step-card {
+            background: #161b27; border: 1px solid #2a2f3e;
+            border-radius: 12px; padding: 28px; height: 100%;
+        }
+        .step-title { font-size: 1rem; font-weight: 600; color: #e0e0e0; margin-bottom: 8px; }
+        .step-desc { color: #6b7280; font-size: 0.88rem; line-height: 1.65; }
+
+        /* ── INDEPENDENT FINAL SECTION WITH GENEROUS SPACE ── */
+        .final-cta-section {
+            background: #0f1117; /* Keeps it seamless with the main body color */
+            padding: 160px 0 180px 0; /* Creates an entire screen worth of breathing room */
+            text-align: center;
+        }
+        .final-cta-section h2 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+        .final-cta-section p {
+            color: #9ca3af;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 40px auto;
+        }
+
+        /* ── FOOTER ── */
+        .landing-footer {
+            padding: 40px 0;
+            border-top: 1px solid #1c2233;
+            background: #0f1117;
+        }
+        .footer-logo { color: #6fbfff; font-weight: 700; font-size: 1.1rem; }
+        .footer-links a {
+            color: #4b5563; text-decoration: none;
+            font-size: 0.82rem; margin-left: 20px;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: #9ca3af; }
+    </style>
+</head>
+<body>
+
+<nav class="landing-nav">
+    <div class="container">
+        <a href="{{ path('app_landing') }}" class="nav-logo">
+            🔐 SecurBox
+        </a>
+        <div class="nav-links d-none d-md-flex">
+            <a href="#features">Fonctionnalités</a>
+            <a href="#how">Comment ça marche</a>
+        </div>
+        <div class="nav-cta">
+            <a href="{{ path('app_login') }}" class="btn-nav-login">Connexion</a>
+            <a href="{{ path('app_register') }}" class="btn-nav-register">
+                <i class="fas fa-rocket me-1"></i> Commencer
+            </a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container">
+        <div class="hero-badge">
+            <i class="fas fa-shield-alt"></i> Architecture Zero-Knowledge
+        </div>
+        <h1>Un seul endroit pour tout ce que vous ne pouvez pas perdre</h1>
+        <p>Vos accès, vos mots de passe et vos données privées — stockés en sécurité absolue et accessibles partout à la demande.</p>
+        <div class="hero-actions">
+            <a href="{{ path('app_register') }}" class="btn-hero-primary">
+                <i class="fas fa-lock"></i> Créer mon coffre-fort
+            </a>
+            <a href="{{ path('app_login') }}" class="btn-hero-secondary">
+                <i class="fas fa-sign-in-alt"></i> Se connecter
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">256</div>
+                    <div class="stat-label">Chiffrement de pointe</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">Types de secrets gérés</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Connaissance de vos données</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Transparent & Sécurisé</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-tag"><i class="fas fa-star"></i> Fonctionnalités</div>
+            <h2 class="section-title">Une infrastructure robuste pour vos données</h2>
+            <p class="section-sub mx-auto">Une suite complète d'outils pour protéger votre vie numérique.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#1e3a5f; color:#6fbfff;">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="feature-title">Chiffrement Zero-Knowledge</div>
+                    <div class="feature-desc">Vos données sont verrouillées localement avant d'être envoyées. Personne d'autre que vous, pas même nous, ne peut les lire.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#1a3a2a; color:#4dd4ac;">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <div class="feature-title">Mots de passe & Notes</div>
+                    <div class="feature-desc">Stockez en toute sérénité tous vos mots de passe importants, vos notes confidentielles et vos identifiants quotidiens.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#2a1a3a; color:#c084fc;">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <div class="feature-title">Gestion des accès</div>
+                    <div class="feature-desc">Administrateurs et utilisateurs profitent de permissions adaptées pour un contrôle total sur l'application.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="how-section" id="how">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-tag"><i class="fas fa-info-circle"></i> Comment ça marche</div>
+            <h2 class="section-title">L'alliance de la simplicité et de la sécurité</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Créez votre compte</div>
+                    <div class="step-desc">Inscrivez-vous avec votre email et définissez un mot de passe maître fort. Il reste privé et confidentiel.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Ajoutez vos secrets</div>
+                    <div class="step-desc">Créez vos fiches pour vos mots de passe ou notes. Tout est immédiatement chiffré sur votre appareil.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Accédez en sécurité</div>
+                    <div class="step-desc">Déchiffrez vos secrets à la demande avec votre mot de passe. Rien n'est conservé sur nos serveurs après votre déconnexion.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Résilience & Continuité</div>
+                    <div class="step-desc">Même en cas de compromission totale de la base de données, vos données restent mathématiquement indéchiffrables.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="final-cta-section">
+    <div class="container">
+        <h2>Garantissez la sécurité de vos secrets dès aujourd'hui</h2>
+        <p>Configurez votre espace hautement sécurisé en moins de deux minutes et reprenez le contrôle complet de vos données.</p>
+        <a href="{{ path('app_register') }}" class="btn-hero-primary">
+            <i class="fas fa-rocket me-2"></i> Commencer maintenant
+        </a>
+    </div>
+</section>
+
+<footer class="landing-footer">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <div class="footer-logo">🔐 SecurBox</div>
+            </div>
+            <div class="footer-links">
+                <a href="{{ path('app_login') }}">Connexion</a>
+                <a href="{{ path('app_register') }}">Inscription</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

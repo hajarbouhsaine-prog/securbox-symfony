@@ -1,0 +1,1057 @@
+{% extends app.request.query.get('modal') == '1' or app.request.headers.get('X-Requested-With') == 'XMLHttpRequest' ? 'modal_base.html.twig' : 'base.html.twig' %}
+{% block title %}Nouveau Secret{% endblock %}
+{% block body %}
+
+<style>
+/* ── Page layout ── */
+.nv-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 0 48px;
+}
+.nv-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+.nv-header h1 {
+    color: #e0e0e0;
+    font-size: 1.35rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+.nv-header h1 i { color: #6fbfff; }
+.nv-fav {
+    background: none; border: none;
+    color: #4b5563; font-size: 1.2rem;
+    cursor: pointer; transition: color 0.2s; padding: 4px 6px;
+    border-radius: 6px;
+}
+.nv-fav:hover { color: #fbbf24; background: #1e2535; }
+.nv-fav.active { color: #fbbf24; }
+
+/* ── Section ── */
+.nv-section {
+    margin-bottom: 24px;
+}
+.nv-section-head {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    padding-left: 2px;
+}
+.nv-card {
+    background: #161b27;
+    border: 1px solid #252d3d;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* ── Field row ── */
+.nv-row {
+    display: flex;
+    align-items: stretch;
+    min-height: 56px;
+    border-bottom: 1px solid #1c2233;
+    position: relative;
+    transition: background 0.12s;
+}
+.nv-row:last-child { border-bottom: none; }
+.nv-row:focus-within { background: #1a2035; }
+
+/* ── Floating label field ── */
+.nv-field {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+.nv-field label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    color: #4b5563;
+    pointer-events: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 32px);
+}
+.nv-field input,
+.nv-field textarea {
+    width: 100%;
+    height: 100%;
+    min-height: 56px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e0e0e0;
+    font-size: 0.92rem;
+    padding: 24px 16px 8px;
+    font-family: inherit;
+    line-height: 1.4;
+}
+.nv-field textarea {
+    resize: vertical;
+    min-height: 100px;
+    padding-top: 28px;
+}
+.nv-field input::placeholder,
+.nv-field textarea::placeholder { color: transparent; }
+
+/* Float label when focused or has value */
+.nv-field input:focus ~ label,
+.nv-field input:not(:placeholder-shown) ~ label,
+.nv-field textarea:focus ~ label,
+.nv-field textarea:not(:placeholder-shown) ~ label {
+    top: 10px;
+    transform: none;
+    font-size: 0.7rem;
+    letter-spacing: 0.01em;
+    color: #4b5563;
+}
+.nv-field input:focus ~ label,
+.nv-field textarea:focus ~ label { color: #6fbfff; }
+
+/* ── Custom select ── */
+.nv-select-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 16px 10px;
+    cursor: pointer;
+}
+.nv-select-wrap .nv-select-label {
+    font-size: 0.7rem;
+    color: #4b5563;
+    letter-spacing: 0.01em;
+    margin-bottom: 3px;
+    pointer-events: none;
+}
+.nv-select-wrap .nv-select-value {
+    font-size: 0.92rem;
+    color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+}
+.nv-select-wrap .nv-select-arrow {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #4b5563;
+    font-size: 0.8rem;
+    pointer-events: none;
+    transition: transform 0.2s;
+}
+.nv-select-wrap select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 1rem;
+}
+.nv-select-wrap:focus-within { background: #1a2035; }
+.nv-select-wrap:focus-within .nv-select-arrow { color: #6fbfff; transform: translateY(-50%) rotate(180deg); }
+.nv-select-wrap:focus-within .nv-select-label { color: #6fbfff; }
+
+/* ── Row actions (buttons on the right) ── */
+.nv-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 10px 0 4px;
+    flex-shrink: 0;
+}
+.nv-btn {
+    width: 34px; height: 34px;
+    background: none; border: none;
+    border-radius: 7px;
+    color: #4b5563;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.nv-btn:hover { color: #9ca3af; background: #252d3d; }
+.nv-btn.danger:hover { color: #f87171; }
+.nv-btn.success { color: #4dd4ac; }
+
+/* ── Hint row (non-interactive) ── */
+.nv-hint-row {
+    padding: 8px 16px 10px;
+    font-size: 0.78rem;
+    color: #374151;
+    border-bottom: 1px solid #1c2233;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.nv-hint-row:last-child { border-bottom: none; }
+
+/* ── Strength bar ── */
+.nv-strength {
+    height: 2px;
+    background: #1c2233;
+    margin: 0 16px 0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.nv-strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+    width: 0;
+}
+
+/* ── Checkbox row ── */
+.nv-check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    color: #9ca3af;
+    font-size: 0.88rem;
+    cursor: pointer;
+    border-bottom: 1px solid #1c2233;
+    user-select: none;
+    transition: background 0.12s;
+}
+.nv-check-row:hover { background: #1a2035; }
+.nv-check-row:last-child { border-bottom: none; }
+.nv-check-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: #6fbfff;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* ── Add link ── */
+.nv-add-link {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 12px 16px;
+    color: #6fbfff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-top: 1px solid #1c2233;
+    width: 100%;
+    transition: color 0.15s, background 0.12s;
+    font-family: inherit;
+}
+.nv-add-link:hover { color: #4dd4ac; background: #1a2035; }
+
+/* ── Split row (two fields side by side) ── */
+.nv-field-split {
+    border-left: 1px solid #1c2233;
+}
+
+/* ── Banner ── */
+.nv-banner {
+    background: #111e38;
+    border: 1px solid #1e3870;
+    border-radius: 10px;
+    padding: 12px 40px 12px 14px;
+    margin-bottom: 24px;
+    font-size: 0.84rem;
+    color: #7aadee;
+    position: relative;
+    line-height: 1.55;
+}
+.nv-banner strong { color: #93c5fd; }
+.nv-banner-close {
+    position: absolute; top: 9px; right: 11px;
+    background: none; border: none; color: #374151;
+    cursor: pointer; font-size: 1rem; padding: 2px;
+}
+.nv-banner-close:hover { color: #6b7280; }
+
+/* ── Type sections ── */
+.type-section { display: none; }
+.type-section.active { display: block; }
+
+/* ── Actions bar ── */
+.nv-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: 28px;
+}
+.nv-save {
+    background: linear-gradient(135deg, #6fbfff, #4dd4ac);
+    border: none; border-radius: 8px;
+    color: #0f1117; font-weight: 700; font-size: 0.9rem;
+    padding: 11px 32px; cursor: pointer; transition: opacity 0.2s;
+    font-family: inherit;
+}
+.nv-save:hover { opacity: 0.88; }
+.nv-cancel {
+    background: none; border: 1px solid #252d3d; border-radius: 8px;
+    color: #6b7280; font-size: 0.9rem; padding: 11px 24px;
+    cursor: pointer; text-decoration: none; display: flex; align-items: center;
+    transition: all 0.15s; font-family: inherit;
+}
+.nv-cancel:hover { background: #1a2035; color: #e0e0e0; border-color: #374151; }
+
+/* ── When rendered inside modal, hide the standalone page header ── */
+.modal-mode .nv-header { display: none; }
+
+/* ── File attachment ── */
+.nv-attach-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    color: #6fbfff;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    font-family: inherit;
+    transition: background 0.12s;
+    border-bottom: 1px solid #1c2233;
+}
+.nv-attach-trigger:hover { background: #1a2035; }
+.nv-attach-trigger:last-child { border-bottom: none; }
+.nv-attach-icon {
+    width: 38px; height: 38px;
+    border: 2px solid #6fbfff;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    color: #6fbfff;
+}
+.nv-attach-list {
+    padding: 0 16px 4px;
+}
+.nv-attach-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #1c2233;
+}
+.nv-attach-item:last-child { border-bottom: none; }
+.nv-attach-thumb {
+    width: 42px; height: 42px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #252d3d;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    color: #6b7280;
+    overflow: hidden;
+}
+.nv-attach-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.nv-attach-name {
+    flex: 1;
+    min-width: 0;
+    background: #1e2535;
+    border: 1px solid #252d3d;
+    border-radius: 7px;
+    padding: 8px 12px;
+    color: #e0e0e0;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nv-attach-size {
+    font-size: 0.75rem;
+    color: #4b5563;
+    margin-top: 2px;
+}
+.nv-attach-delete {
+    background: none; border: none;
+    color: #4b5563; cursor: pointer;
+    font-size: 1rem; padding: 4px 6px;
+    border-radius: 6px; flex-shrink: 0;
+    transition: color 0.15s;
+}
+.nv-attach-delete:hover { color: #f87171; }
+/* drag-over highlight */
+.nv-card.drag-over { border-color: #6fbfff; background: #111e38; }
+</style>
+
+<div class="nv-wrap{% if app.request.query.get('modal') == '1' or app.request.headers.get('X-Requested-With') == 'XMLHttpRequest' %} modal-mode{% endif %}">
+
+{# ── Header (hidden in modal mode — modal header is shown instead) ── #}
+<div class="nv-header">
+    <h1><i class="fas fa-plus-circle"></i> Nouveau Secret</h1>
+    <button type="button" class="nv-fav" id="favBtn" onclick="toggleFavorite()" title="Ajouter aux favoris">
+        <i class="fas fa-star"></i>
+    </button>
+</div>
+
+<form method="post"
+      id="secretForm"
+      action="{{ path('app_vault_new', {'type': app.request.query.get('type', 'password')}) }}"
+      enctype="multipart/form-data">
+<input type="hidden" name="_token" value="{{ csrf_token('new_secret') }}">
+
+{# ── Autofill banner (password only) ── #}
+<div class="nv-banner" id="autofillBanner">
+    <button type="button" class="nv-banner-close" onclick="this.parentElement.style.display='none'">×</button>
+    <i class="fas fa-info-circle me-1"></i>
+    Ajoutez un <strong>site web (URI)</strong> pour que ce secret apparaisse comme suggestion lors de la navigation.
+</div>
+
+{# ══════════════════════════════════════════
+   SECTION 1 — Détails de l'élément
+══════════════════════════════════════════ #}
+<div class="nv-section">
+    <div class="nv-section-head">
+        <i class="fas fa-info-circle me-1"></i> Détails de l'élément
+    </div>
+    <div class="nv-card">
+
+        {# Nom #}
+        <div class="nv-row">
+            <div class="nv-field">
+                <input type="text" name="name" id="nameInput" placeholder=" " required>
+                <label for="nameInput">Nom de l'élément (requis)</label>
+            </div>
+        </div>
+
+       {# Collection — requis #}
+        <div class="nv-row">
+            <div class="nv-select-wrap">
+                <div class="nv-select-label">Collection (requis)</div>
+                <div class="nv-select-value" id="collectionDisplay">
+                    <i class="fas fa-layer-group fa-fw" style="color:#4b5563; font-size:0.85rem;"></i>
+                    <span id="collectionText">
+                        {% if currentCollection is defined and currentCollection %}
+                            {{ currentCollection.name }}
+                        {% else %}
+                            -- Sélectionner --
+                        {% endif %}
+                    </span>
+                </div>
+                <i class="fas fa-chevron-down nv-select-arrow"></i>
+                <select name="collection_id" required onchange="updateCollectionDisplay(this)">
+                    <option value="">-- Sélectionner --</option>
+                    {% for col in collections %}
+                    <option value="{{ col.id }}"
+                        {% if currentCollection is defined and currentCollection and currentCollection.id == col.id %}selected{% endif %}>
+                        {{ col.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        {# Type — custom select with description #}
+        <div class="nv-row">
+            <div class="nv-select-wrap">
+                <div class="nv-select-label">Type de secret</div>
+                <div class="nv-select-value" id="typeDisplay">
+                    <span id="typeText">🔑 Mot de passe</span>
+                </div>
+                <i class="fas fa-chevron-down nv-select-arrow"></i>
+                <select name="type" id="typeSelect" onchange="onTypeChange(this.value); updateDisplay('type', this)">
+                    <option value="password" {{ defaultType == 'password' ? 'selected' : '' }}>🔑 Mot de passe</option>
+                    <option value="api_key"  {{ defaultType == 'api_key'  ? 'selected' : '' }}>⚙️ Clé API</option>
+                    <option value="note"     {{ defaultType == 'note'     ? 'selected' : '' }}>📝 Note sécurisée</option>
+                    <option value="identity" {{ defaultType == 'identity' ? 'selected' : '' }}>👤 Identité</option>
+                </select>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ══════════════════════════════════════════
+   SECTION 2 — PASSWORD fields
+══════════════════════════════════════════ #}
+<div id="section-password" class="type-section">
+
+    <div class="nv-section">
+        <div class="nv-section-head">
+            <i class="fas fa-key me-1"></i> Identifiants de connexion
+        </div>
+        <div class="nv-card">
+
+            {# Username #}
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="text" name="username" id="usernameInput" placeholder=" ">
+                    <label for="usernameInput">Nom d'utilisateur</label>
+                </div>
+                <div class="nv-actions">
+                    <button type="button" class="nv-btn" title="Générer un nom" onclick="generateUsername()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# Password #}
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="password" name="password" id="passwordInput" placeholder=" ">
+                    <label for="passwordInput">Mot de passe</label>
+                </div>
+                <div class="nv-actions">
+                    <button type="button" class="nv-btn" title="Afficher / Masquer" onclick="togglePwdVisibility()">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                    <button type="button" class="nv-btn" title="Générer un mot de passe fort" onclick="generatePassword()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# Strength bar + hint #}
+            <div class="nv-strength" id="strengthBarWrap" style="display:none;">
+                <div class="nv-strength-fill" id="strengthFill"></div>
+            </div>
+            <div class="nv-hint-row">
+                <i class="fas fa-sync-alt" style="font-size:0.75rem;"></i>
+                Utilisez le générateur pour créer un mot de passe unique et fort
+            </div>
+
+            {# TOTP #}
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="text" name="totp" id="totpInput" placeholder=" ">
+                    <label for="totpInput">Code d'authentification (TOTP)</label>
+                </div>
+                <div class="nv-actions">
+                    <button type="button" class="nv-btn" title="C'est quoi le TOTP ?"
+                            onclick="alert('Le TOTP (Time-based One-Time Password) est le code 6 chiffres généré par une app comme Google Authenticator. Collez ici la clé secrète (otpauth://).')">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {# Autofill #}
+    <div class="nv-section">
+        <div class="nv-section-head">
+            <i class="fas fa-globe me-1"></i> Remplissage automatique
+        </div>
+        <div class="nv-card">
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="url" name="website" id="websiteInput" placeholder=" ">
+                    <label for="websiteInput">Site web (URI)</label>
+                </div>
+                <div class="nv-actions">
+                    <button type="button" class="nv-btn" title="Paramètres URI">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="extraWebsites"></div>
+            <button type="button" class="nv-add-link" onclick="addWebsite()">
+                <i class="fas fa-plus"></i> Ajouter un site web
+            </button>
+        </div>
+    </div>
+
+</div>{# /section-password #}
+
+{# ══════════════════════════════════════════
+   SECTION 2 — API KEY fields
+══════════════════════════════════════════ #}
+<div id="section-api_key" class="type-section">
+    <div class="nv-section">
+        <div class="nv-section-head">
+            <i class="fas fa-code me-1"></i> Clé API
+        </div>
+        <div class="nv-card">
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="text" name="api_service" id="apiService" placeholder=" ">
+                    <label for="apiService">Service / Plateforme (ex: OpenAI, Stripe…)</label>
+                </div>
+            </div>
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="password" name="api_key_value" id="apiKeyInput" placeholder=" ">
+                    <label for="apiKeyInput">Clé API</label>
+                </div>
+                <div class="nv-actions">
+                    <button type="button" class="nv-btn" title="Afficher / Masquer" onclick="toggleApiVisibility()">
+                        <i class="fas fa-eye" id="apiEyeIcon"></i>
+                    </button>
+                    <button type="button" class="nv-btn" id="apiCopyBtn" title="Copier la clé" onclick="copyApiKey()">
+                        <i class="fas fa-copy" id="apiCopyIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="url" name="api_base_url" id="apiBaseUrl" placeholder=" ">
+                    <label for="apiBaseUrl">URL de base (optionnel)</label>
+                </div>
+            </div>
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="text" name="api_env" id="apiEnv" placeholder=" ">
+                    <label for="apiEnv">Environnement (prod, staging, dev…)</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════
+   SECTION 2 — IDENTITY fields
+══════════════════════════════════════════ #}
+<div id="section-identity" class="type-section">
+    <div class="nv-section">
+        <div class="nv-section-head">
+            <i class="fas fa-id-card me-1"></i> Informations personnelles
+        </div>
+        <div class="nv-card">
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="text" name="id_firstname" id="idFirst" placeholder=" ">
+                    <label for="idFirst">Prénom</label>
+                </div>
+                <div class="nv-field nv-field-split">
+                    <input type="text" name="id_lastname" id="idLast" placeholder=" ">
+                    <label for="idLast">Nom de famille</label>
+                </div>
+            </div>
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="email" name="id_email" id="idEmail" placeholder=" ">
+                    <label for="idEmail">Adresse e-mail</label>
+                </div>
+            </div>
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="tel" name="id_phone" id="idPhone" placeholder=" ">
+                    <label for="idPhone">Téléphone</label>
+                </div>
+                <div class="nv-field nv-field-split">
+                    <input type="text" name="id_company" id="idCompany" placeholder=" ">
+                    <label for="idCompany">Entreprise</label>
+                </div>
+            </div>
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="text" name="id_address" id="idAddress" placeholder=" ">
+                    <label for="idAddress">Adresse</label>
+                </div>
+            </div>
+            <div class="nv-row">
+                <div class="nv-field">
+                    <input type="text" name="id_city" id="idCity" placeholder=" ">
+                    <label for="idCity">Ville</label>
+                </div>
+                <div class="nv-field nv-field-split">
+                    <input type="text" name="id_country" id="idCountry" placeholder=" ">
+                    <label for="idCountry">Pays</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════
+   SECTION 2 — NOTE fields
+══════════════════════════════════════════ #}
+<div id="section-note" class="type-section">
+    <div class="nv-section">
+        <div class="nv-section-head">
+            <i class="fas fa-sticky-note me-1"></i> Contenu de la note
+        </div>
+        <div class="nv-card">
+            <div class="nv-row" style="min-height:140px;">
+                <div class="nv-field">
+                    <textarea name="note_content" id="noteContent" placeholder=" "></textarea>
+                    <label for="noteContent">Écrivez votre note sécurisée ici…</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════
+   SECTION 3 — Options supplémentaires
+══════════════════════════════════════════ #}
+<div class="nv-section">
+    <div class="nv-section-head">
+        <i class="fas fa-sliders-h me-1"></i> Options supplémentaires
+    </div>
+    <div class="nv-card" id="optionsCard">
+        <div class="nv-row" style="min-height:90px;">
+            <div class="nv-field">
+                <textarea name="notes" id="notesInput" placeholder=" " style="min-height:90px;"></textarea>
+                <label for="notesInput">Notes (remarques, contexte…)</label>
+            </div>
+        </div>
+        <label class="nv-check-row">
+            <input type="checkbox" name="master_reprompt" value="1">
+            Redemander le mot de passe maître pour afficher
+        </label>
+        <div id="extraFields"></div>
+        <button type="button" class="nv-add-link" onclick="addCustomField()">
+            <i class="fas fa-plus"></i> Ajouter un champ personnalisé
+        </button>
+
+        {# ══ File attachment trigger ══ #}
+        <button type="button" class="nv-attach-trigger" onclick="document.getElementById('attachInput').click()">
+            <span class="nv-attach-icon"><i class="fas fa-paperclip"></i></span>
+            Joindre des fichiers, photos &amp; vidéos
+        </button>
+
+        {# Hidden real file input (accepts images, videos, and common docs) #}
+        <input type="file"
+               id="attachInput"
+               name="attachments[]"
+               multiple
+               accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+               style="display:none;"
+               onchange="handleAttachments(this.files)">
+
+        {# List of attached files rendered here #}
+        <div class="nv-attach-list" id="attachList"></div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════
+   SECTION 4 — Chiffrement  [COMMENTÉE]
+══════════════════════════════════════════ #}
+
+<div class="nv-section">
+    <div class="nv-section-head" style="color:#f87171;">
+        <i class="fas fa-shield-alt me-1"></i> Chiffrement
+    </div>
+    <div class="nv-card master">
+        <div class="nv-row">
+            <div class="nv-field">
+                <input type="password" name="master_password" id="masterInput" placeholder=" " required>
+                <label for="masterInput">Mot de passe maître (requis)</label>
+            </div>
+        </div>
+        <div class="nv-hint-row">
+            <i class="fas fa-lock" style="color:#374151;"></i>
+            Nécessaire pour chiffrer vos données — ne sera jamais stocké sur nos serveurs
+        </div>
+    </div>
+</div>
+
+
+<input type="hidden" name="data" id="hiddenData">
+
+{# ── Footer actions ── #}
+<div class="nv-footer">
+    <button type="submit" class="nv-save" onclick="prepareData(event)">
+        <i class="fas fa-lock me-2"></i>Sauvegarder
+    </button>
+    <a href="{{ path('app_vault_index') }}" class="nv-cancel">Annuler</a>
+</div>
+
+</form>
+</div>{# /nv-wrap #}
+
+<script>
+/* ── Type switching ── */
+function onTypeChange(type) {
+    ['password','api_key','note','identity'].forEach(t => {
+        document.getElementById('section-' + t)?.classList.toggle('active', t === type);
+    });
+    const banner = document.getElementById('autofillBanner');
+    if (banner) banner.style.display = (type === 'password') ? 'block' : 'none';
+}
+
+/* ── Custom select display update ── */
+function updateDisplay(which, sel) {
+    const text = sel.options[sel.selectedIndex].text;
+    if (which === 'folder') document.getElementById('folderText').textContent = text;
+    if (which === 'type')   document.getElementById('typeText').textContent  = text;
+}
+
+function updateCollectionDisplay(sel) {
+    document.getElementById('collectionText').textContent = sel.options[sel.selectedIndex].text;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sel = document.getElementById('typeSelect');
+    if (sel) {
+        onTypeChange(sel.value);
+        updateDisplay('type', sel);
+        const fs = document.querySelector('[name="folder"]');
+        if (fs) updateDisplay('folder', fs);
+    }
+
+    /* ── Drag & drop on the options card ── */
+    const card = document.getElementById('optionsCard');
+    if (card) {
+        card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('drag-over'); });
+        card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+        card.addEventListener('drop', e => {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) handleAttachments(e.dataTransfer.files);
+        });
+    }
+});
+
+/* Init immediately if already in DOM (modal inject case) */
+(function() {
+    const sel = document.getElementById('typeSelect');
+    if (sel) {
+        onTypeChange(sel.value);
+        updateDisplay('type', sel);
+        const fs = document.querySelector('[name="folder"]');
+        if (fs) updateDisplay('folder', fs);
+    }
+})();
+
+/* ── Password visibility ── */
+function togglePwdVisibility() {
+    const inp = document.getElementById('passwordInput');
+    const ico = document.getElementById('eyeIcon');
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    ico.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+}
+function toggleApiVisibility() {
+    const inp = document.getElementById('apiKeyInput');
+    const ico = document.getElementById('apiEyeIcon');
+    if (!inp) return;
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    ico.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+}
+
+/* ── Copy API key ── */
+function copyApiKey() {
+    const inp = document.getElementById('apiKeyInput');
+    const ico = document.getElementById('apiCopyIcon');
+    if (inp?.value) {
+        navigator.clipboard.writeText(inp.value);
+        ico.className = 'fas fa-check';
+        ico.closest('.nv-btn').style.color = '#4dd4ac';
+        setTimeout(() => { ico.className = 'fas fa-copy'; ico.closest('.nv-btn').style.color = ''; }, 1600);
+    }
+}
+
+/* ── Password generator ── */
+function generatePassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
+    const pwd = Array.from({length: 20}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const inp = document.getElementById('passwordInput');
+    if (!inp) return;
+    inp.value = pwd;
+    inp.type = 'text';
+    document.getElementById('eyeIcon').className = 'fas fa-eye-slash';
+    updateStrength(pwd);
+}
+function generateUsername() {
+    const a = ['swift','bold','calm','dark','cool','bright','sharp'];
+    const n = ['falcon','tiger','ocean','storm','pixel','comet','river'];
+    const inp = document.getElementById('usernameInput');
+    if (inp) inp.value = a[~~(Math.random()*a.length)] + '_' + n[~~(Math.random()*n.length)] + ~~(Math.random()*999);
+}
+
+/* ── Strength ── */
+function updateStrength(pwd) {
+    const fill = document.getElementById('strengthFill');
+    const wrap = document.getElementById('strengthBarWrap');
+    if (!fill) return;
+    const checks = [pwd.length >= 8, pwd.length >= 16, /[A-Z]/.test(pwd) && /[a-z]/.test(pwd), /[0-9]/.test(pwd), /[^A-Za-z0-9]/.test(pwd)];
+    const s = checks.filter(Boolean).length;
+    fill.style.width = (s * 20) + '%';
+    fill.style.background = ['#ef4444','#f97316','#eab308','#22c55e','#4dd4ac'][s - 1] || '#252d3d';
+    if (wrap) wrap.style.display = pwd ? 'block' : 'none';
+}
+document.addEventListener('input', e => { if (e.target.name === 'password') updateStrength(e.target.value); });
+
+/* ── Dynamic websites ── */
+function addWebsite() {
+    const uid = 'w' + Date.now(), row = document.createElement('div');
+    row.className = 'nv-row';
+    row.innerHTML = `
+        <div class="nv-field">
+            <input type="url" name="website_extra[]" id="${uid}" placeholder=" ">
+            <label for="${uid}">Site web (URI)</label>
+        </div>
+        <div class="nv-actions">
+            <button type="button" class="nv-btn danger" onclick="this.closest('.nv-row').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>`;
+    document.getElementById('extraWebsites').appendChild(row);
+}
+
+/* ── Custom fields ── */
+function addCustomField() {
+    const u1 = 'k'+Date.now(), u2 = 'v'+Date.now(), row = document.createElement('div');
+    row.className = 'nv-row';
+    row.innerHTML = `
+        <div class="nv-field" style="flex:1;">
+            <input type="text" name="custom_field_name[]" id="${u1}" placeholder=" ">
+            <label for="${u1}">Nom du champ</label>
+        </div>
+        <div class="nv-field nv-field-split" style="flex:2;">
+            <input type="text" name="custom_field_value[]" id="${u2}" placeholder=" ">
+            <label for="${u2}">Valeur</label>
+        </div>
+        <div class="nv-actions">
+            <button type="button" class="nv-btn danger" onclick="this.closest('.nv-row').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>`;
+    document.getElementById('extraFields').appendChild(row);
+}
+
+/* ── Favorite ── */
+function toggleFavorite() { document.getElementById('favBtn')?.classList.toggle('active'); }
+
+/* ── File attachments ── */
+const attachedFiles = []; // keep track of File objects
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function isImage(file) { return file.type.startsWith('image/'); }
+function isVideo(file) { return file.type.startsWith('video/'); }
+
+function handleAttachments(files) {
+    const list = document.getElementById('attachList');
+    [...files].forEach(file => {
+        const idx = attachedFiles.length;
+        attachedFiles.push({
+            name: file.name,
+            type: file.type || 'application/octet-stream',
+            size: formatBytes(file.size),
+            data: null,
+        });
+
+        const item = document.createElement('div');
+        item.className = 'nv-attach-item';
+        item.dataset.idx = idx;
+
+        // Thumbnail
+        const thumb = document.createElement('div');
+        thumb.className = 'nv-attach-thumb';
+        const img = document.createElement('img');
+        if (isImage(file)) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                img.src = e.target.result;
+                attachedFiles[idx].data = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            thumb.appendChild(img);
+        } else if (isVideo(file)) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                attachedFiles[idx].data = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            thumb.innerHTML = '<i class="fas fa-film"></i>';
+        } else {
+            const reader = new FileReader();
+            reader.onload = e => {
+                attachedFiles[idx].data = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            thumb.innerHTML = '<i class="fas fa-file"></i>';
+        }
+
+        // Name + size
+        const info = document.createElement('div');
+        info.style.flex = '1';
+        info.style.minWidth = '0';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'nv-attach-name';
+        nameEl.textContent = file.name;
+        const sizeEl = document.createElement('div');
+        sizeEl.className = 'nv-attach-size';
+        sizeEl.textContent = formatBytes(file.size);
+        info.appendChild(nameEl);
+        info.appendChild(sizeEl);
+
+        // Delete button
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'nv-attach-delete';
+        del.title = 'Supprimer';
+        del.innerHTML = '<i class="fas fa-trash"></i>';
+        del.onclick = () => {
+            attachedFiles[idx] = null; // mark as removed
+            item.remove();
+        };
+
+        item.appendChild(thumb);
+        item.appendChild(info);
+        item.appendChild(del);
+        list.appendChild(item);
+    });
+
+    // Reset input so same file can be re-added after deletion
+    document.getElementById('attachInput').value = '';
+}
+
+/* ── Prepare data ── */
+function prepareData(e) {
+    const type = document.getElementById('typeSelect').value;
+    let d = { type };
+    if (type === 'password') {
+        d.username = document.querySelector('[name="username"]')?.value || '';
+        d.password = document.querySelector('[name="password"]')?.value || '';
+        d.website  = document.querySelector('[name="website"]')?.value  || '';
+        d.totp     = document.querySelector('[name="totp"]')?.value     || '';
+    } else if (type === 'api_key') {
+        d.service  = document.querySelector('[name="api_service"]')?.value   || '';
+        d.key      = document.querySelector('[name="api_key_value"]')?.value || '';
+        d.base_url = document.querySelector('[name="api_base_url"]')?.value  || '';
+        d.env      = document.querySelector('[name="api_env"]')?.value       || '';
+    } else if (type === 'identity') {
+        ['id_firstname','id_lastname','id_email','id_phone','id_company','id_address','id_city','id_country']
+            .forEach(f => d[f.replace('id_','')] = document.querySelector(`[name="${f}"]`)?.value || '');
+    } else if (type === 'note') {
+        d.content = document.querySelector('[name="note_content"]')?.value || '';
+    }
+    const fnames = [...document.querySelectorAll('[name="custom_field_name[]"]')].map(i => i.value);
+    const fvals  = [...document.querySelectorAll('[name="custom_field_value[]"]')].map(i => i.value);
+    if (fnames.length) d.custom_fields = fnames.map((k,i) => ({key:k, value:fvals[i]}));
+    d.notes = document.querySelector('[name="notes"]')?.value || '';
+    const savedAttachments = attachedFiles.filter(a => a && a.data);
+    if (savedAttachments.length) {
+        d.attachments = savedAttachments;
+    }
+    d.attachments_count = savedAttachments.length;
+    document.getElementById('hiddenData').value = JSON.stringify(d);
+}
+
+document.getElementById('secretForm')?.addEventListener('submit', function() {
+    prepareData();
+});
+</script>
+
+{% endblock %}

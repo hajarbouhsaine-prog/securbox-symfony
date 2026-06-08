@@ -1,0 +1,572 @@
+{% extends 'base.html.twig' %}
+{% block title %}Mon Coffre-Fort{% endblock %}
+{% block body %}
+
+<style>
+.vault-layout {
+    display: flex;
+    min-height: calc(100vh - 57px);
+    gap: 16px; /* space between filters panel and secrets panel */
+}
+
+/* ── FILTERS PANEL ── */
+.filters-panel {
+    width: 260px;
+    flex-shrink: 0;
+    background: #131929;
+    border-right: 1px solid #1f2937;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+.filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 10px; /* slightly tighter to feel boxed */
+    border-bottom: 1px solid #1f2937;
+    flex-shrink: 0;
+}
+.filters-header span {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.filters-header button {
+    background: none; border: none; color: #4b5563;
+    cursor: pointer; font-size: 0.85rem; padding: 2px 6px;
+    border-radius: 50%; transition: color 0.15s;
+}
+.filters-header button:hover { color: #6fbfff; }
+
+.filters-search {
+    margin: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1e2535;
+    border: 1px solid #2a2f3e;
+    border-radius: 8px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+}
+.filters-search:focus-within { border-color: #6fbfff; }
+.filters-search input {
+    background: transparent; border: none; outline: none;
+    color: #e0e0e0; font-size: 0.88rem; width: 100%;
+}
+.filters-search i { color: #4b5563; font-size: 0.82rem; }
+
+.filters-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px 4px;
+    font-size: 0.72rem;
+    color: #6fbfff;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    user-select: none;
+}
+.filters-section-title i { font-size: 0.65rem; transition: transform 0.2s; }
+.filters-section-title.collapsed i { transform: rotate(-90deg); }
+
+.filters-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    color: #9ca3af;
+    font-size: 0.87rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.12s;
+    border-left: 2px solid transparent;
+}
+.filters-item:hover { background: #1d2738; color: #e0e0e0; }
+.filters-item.active { background: #1a2338; color: #e0e0e0; border-left-color: #6fbfff; }
+.filters-item i { width: 18px; text-align: center; font-size: 0.82rem; flex-shrink: 0; color: inherit; }
+.filters-item .f-count {
+    margin-left: auto;
+    font-size: 0.68rem;
+    background: transparent;
+    color: #9ca3af;
+    border-radius: 10px;
+    padding: 1px 7px;
+    flex-shrink: 0;
+}
+.filters-item.sub { padding-left: 32px; }
+
+.filters-divider { border: none; border-top: 1px solid #1f2937; margin: 6px 0; }
+
+/* ── SECRETS PANEL ── */
+.secrets-panel { flex: 1; min-width: 0; padding: 24px 20px; overflow-y: auto; }
+.secrets-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #1f2937;
+}
+.secrets-header h1 {
+    color: #e0e0e0; font-size: 1.2rem; font-weight: 600;
+    margin: 0; display: flex; align-items: center; gap: 10px;
+}
+.secrets-table-head {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 50px;
+    padding: 7px 14px; margin-bottom: 4px; border-bottom: 1px solid #1f2937;
+}
+.secrets-table-head span {
+    color: #4b5563; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+}
+.secret-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 50px;
+    align-items: center; padding: 11px 14px; margin-bottom: 1px;
+    border-radius: 8px; border: 1px solid transparent;
+    transition: all 0.12s; cursor: pointer; position: relative;
+}
+.secret-row:hover { background: #1a2035; border-color: #2a2f3e; }
+.secret-icon {
+    width: 32px; height: 32px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 0.82rem;
+}
+.dropdown-item:hover { background-color: #1a2035 !important; color: #fff !important; }
+</style>
+
+<div class="vault-layout">
+
+    {# ══ FILTERS PANEL ══ #}
+    <div class="filters-panel">
+
+        <div class="filters-header">
+            <span>Filtres</span>
+        </div>
+
+        <div class="filters-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Rechercher dans le coffre...">
+        </div>
+
+        {# ── Tous les coffres ── #}
+        <div class="filters-section-title" onclick="toggleSection('vaultsSection', this)">
+            <i class="fas fa-chevron-down"></i>
+            Tous les coffres
+        </div>
+        <div id="vaultsSection">
+            <a href="{{ path('app_vault_index') }}"
+               class="filters-item {{ app.request.query.get('collection') is null and app.request.query.get('type') is null and app.request.query.get('favorite') is null ? 'active' : '' }}">
+                <i class="fas fa-user"></i>
+                Mon Coffre-Fort
+            </a>
+        </div>
+
+        <hr class="filters-divider">
+
+        {# ── Tous les éléments ── #}
+        <div class="filters-section-title" onclick="toggleSection('itemsSection', this)">
+            <i class="fas fa-chevron-down"></i>
+            Tous les éléments
+        </div>
+        <div id="itemsSection">
+            <a href="{{ path('app_vault_index', {favorite: 1}) }}"
+               class="filters-item {{ app.request.query.get('favorite') == 1 ? 'active' : '' }}">
+                <i class="fas fa-star"></i>
+                Favoris
+            </a>
+            <a href="{{ path('app_vault_index', {type: 'password'}) }}"
+               class="filters-item {{ app.request.query.get('type') == 'password' ? 'active' : '' }}">
+                <i class="fas fa-key"></i>
+                Mots de passe
+            </a>
+            <a href="{{ path('app_vault_index', {type: 'api_key'}) }}"
+               class="filters-item {{ app.request.query.get('type') == 'api_key' ? 'active' : '' }}">
+                <i class="fas fa-code"></i>
+                Clés API
+            </a>
+            <a href="{{ path('app_vault_index', {type: 'identity'}) }}"
+               class="filters-item {{ app.request.query.get('type') == 'identity' ? 'active' : '' }}">
+                <i class="fas fa-id-card"></i>
+                Identités
+            </a>
+            <a href="{{ path('app_vault_index', {type: 'note'}) }}"
+               class="filters-item {{ app.request.query.get('type') == 'note' ? 'active' : '' }}">
+                <i class="fas fa-sticky-note"></i>
+                Notes sécurisées
+            </a>
+        </div>
+
+        <hr class="filters-divider">
+
+        {# ── Collections ── #}
+        {% set userCollections = app.user.collections %}
+        <div class="filters-section-title" onclick="toggleSection('collectionsSection', this)">
+            <i class="fas fa-chevron-down"></i>
+            Collections
+        </div>
+        <div id="collectionsSection">
+            {% if userCollections is empty %}
+                <div style="padding:6px 14px 10px; font-size:0.78rem; color:#374151; font-style:italic;">
+                    Aucune collection
+                </div>
+            {% else %}
+                {% for col in userCollections %}
+                <a href="{{ path('app_vault_index', {collection: col.id}) }}"
+                   class="filters-item {{ app.request.query.get('collection') == col.id ? 'active' : '' }}">
+                    <i class="fas fa-layer-group"></i>
+                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ col.name }}</span>
+                    <span class="f-count">{{ col.secrets|length }}</span>
+                </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <hr class="filters-divider">
+
+        {# ── Archive & Corbeille ── #}
+        <a href="{{ path('app_vault_index', {archived: 1}) }}"
+           class="filters-item {{ app.request.query.get('archived') == 1 ? 'active' : '' }}">
+            <i class="fas fa-archive"></i>
+            Archive
+        </a>
+        <a href="{{ path('app_vault_index', {bin: 1}) }}"
+           class="filters-item {{ app.request.query.get('bin') == 1 ? 'active' : '' }}">
+            <i class="fas fa-trash"></i>
+            Corbeille
+        </a>
+
+    </div>
+
+    {# ══ SECRETS PANEL ══ #}
+    <div class="secrets-panel">
+        {% if app.request.query.get('bin') %}
+        <div style="background:#3a1a0a; border:1px solid #f97316; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px; font-size:0.88rem; color:#fdba74;">
+            <i class="fas fa-exclamation-triangle" style="color:#f97316;"></i>
+            <span>Les éléments dans la corbeille seront définitivement supprimés après 30 jours.</span>
+        </div>
+        {% endif %}
+        <div class="secrets-header">
+            <h1>
+                {% if app.request.query.get('favorite') == 1 %}
+                    <i class="fas fa-star"></i> Favoris
+                {% elseif app.request.query.get('collection') %}
+                    {% for col in collections %}
+                        {% if col.id == app.request.query.get('collection')|number_format %}
+                            <i class="fas fa-layer-group" style="color:#6fbfff;"></i> {{ col.name }}
+                        {% endif %}
+                    {% endfor %}
+                {% elseif app.request.query.get('type') == 'password' %}
+                    <i class="fas fa-key"></i> Mots de passe
+                {% elseif app.request.query.get('type') == 'api_key' %}
+                    <i class="fas fa-code"></i> Clés API
+                {% elseif app.request.query.get('type') == 'note' %}
+                    <i class="fas fa-sticky-note"></i> Notes sécurisées
+                {% elseif app.request.query.get('type') == 'identity' %}
+                    <i class="fas fa-id-card"></i> Identités
+                {% else %}
+                    <i class="fas fa-vault"></i> Mon Coffre-Fort
+                {% endif %}
+            </h1>
+            <span style="color:#4b5563; font-size:0.82rem;">{{ secrets|length }} élément(s)</span>
+        </div>
+
+        {% if secrets is empty %}
+            <div style="text-align:center; padding:80px 20px; color:#4b5563;">
+                <i class="fas fa-box-open fa-3x" style="opacity:0.12; margin-bottom:16px; display:block;"></i>
+                <p style="font-size:0.95rem; margin-bottom:6px;">Aucun secret ici</p>
+                <p style="font-size:0.82rem;">Utilisez le bouton <strong style="color:#6fbfff;">+ Nouveau</strong> pour en ajouter un</p>
+            </div>
+        {% else %}
+            <div class="secrets-table-head">
+                <span>Nom</span>
+                <span>Type</span>
+                <span>Date</span>
+                <span style="text-align:center;">Actions</span>
+            </div>
+            <div id="secretsList">
+                {% for secret in secrets %}
+                <div class="secret-row" data-id="{{ secret.id }}" data-url="{{ path('app_vault_show', {id: secret.id, modal: 1}) }}" data-name="{{ secret.name|lower }}">
+                    <div style="display:flex; align-items:center; gap:11px;">
+                        <div class="secret-icon
+                            {% if secret.type == 'password' %}icon-password
+                            {% elseif secret.type == 'api_key' %}icon-api
+                            {% elseif secret.type == 'note' %}icon-note
+                            {% else %}icon-identity{% endif %}">
+                            {% if secret.type == 'password' %}<i class="fas fa-key"></i>
+                            {% elseif secret.type == 'api_key' %}<i class="fas fa-code"></i>
+                            {% elseif secret.type == 'note' %}<i class="fas fa-sticky-note"></i>
+                            {% else %}<i class="fas fa-id-card"></i>{% endif %}
+                        </div>
+                        <div>
+                            <div style="color:#e0e0e0; font-weight:500; font-size:0.9rem;">
+                                {{ secret.name }}
+                                {% if secret.isFavorite %}
+                                <i class="fas fa-star" style="color:#fbbf24; font-size:0.7rem; margin-left:4px;"></i>
+                                {% endif %}
+                            </div>
+                            {% if secret.collection %}
+                            <div style="font-size:0.7rem; color:#4b5563; margin-top:1px;">
+                                <i class="fas fa-layer-group" style="font-size:0.6rem;"></i>
+                                {{ secret.collection.name }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span style="color:#4b5563; font-size:0.82rem;">{{ secret.type }}</span>
+                    <span style="color:#4b5563; font-size:0.82rem;">{{ secret.createdAt|date('d/m/Y') }}</span>
+                    <div style="text-align:center; position:relative;">
+                        <button class="custom-dropdown-trigger" type="button"
+                                style="color:#4b5563; border:none; background:transparent; cursor:pointer; padding:4px 10px; font-size:1rem;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="custom-dropdown-menu shadow"
+                            style="display:none; position:absolute; right:0; top:100%; background:#161b27;
+                                   border:1px solid #2a2f3e; min-width:180px; padding:6px 0;
+                                   z-index:1000; border-radius:8px; list-style:none; margin:4px 0 0 0;">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
+                                   href="{{ path('app_vault_show', {id: secret.id}) }}"
+                                   style="color:#e0e0e0; font-size:0.87rem; text-decoration:none;">
+                                    <i class="fas fa-eye" style="width:15px; color:#4b5563;"></i> Afficher
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
+                                   href="{{ path('app_vault_edit', {id: secret.id}) }}"
+                                   style="color:#e0e0e0; font-size:0.87rem; text-decoration:none;">
+                                    <i class="fas fa-edit" style="width:15px; color:#4b5563;"></i> Modifier
+                                </a>
+                            </li>
+                            <li>
+                                <form method="post" action="{{ path('app_vault_favorite', {id: secret.id}) }}" style="margin:0;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('favorite' ~ secret.id) }}">
+                                    <button type="submit"
+                                            class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 w-100 text-start"
+                                            style="color:{% if secret.isFavorite %}#fbbf24{% else %}#e0e0e0{% endif %}; font-size:0.87rem; background:transparent; border:none; cursor:pointer;">
+                                        <i class="fas fa-star" style="width:15px;"></i>
+                                        {% if secret.isFavorite %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form method="post" action="{{ path('app_vault_archive', {id: secret.id}) }}" style="margin:0;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('archive' ~ secret.id) }}">
+                                    <button type="submit"
+                                            class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 w-100 text-start"
+                                            style="color:#e0e0e0; font-size:0.87rem; background:transparent; border:none; cursor:pointer;">
+                                        <i class="fas fa-archive" style="width:15px; color:#4b5563;"></i>
+                                        {% if secret.isArchived %}Désarchiver{% else %}Archiver{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            <li><hr style="border-color:#2a2f3e; margin:4px 0;"></li>
+                            {% if app.request.query.get('bin') %}
+                            <li>
+                                <form method="post" action="{{ path('app_vault_restore', {id: secret.id}) }}" style="margin:0;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('restore' ~ secret.id) }}">
+                                    <button type="submit"
+                                            class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 w-100 text-start"
+                                            style="color:#4dd4ac; font-size:0.87rem; background:transparent; border:none; cursor:pointer;">
+                                        <i class="fas fa-undo" style="width:15px;"></i> Restaurer
+                                    </button>
+                                </form>
+                            </li>
+                            {% else %}
+                            <li>
+                                <form method="post" action="{{ path('app_vault_trash', {id: secret.id}) }}"
+                                      onsubmit="return confirm('Déplacer vers la corbeille ?')" style="margin:0;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('trash' ~ secret.id) }}">
+                                    <button type="submit"
+                                            class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 w-100 text-start"
+                                            style="color:#f87171; font-size:0.87rem; background:transparent; border:none; cursor:pointer;">
+                                        <i class="fas fa-trash" style="width:15px;"></i> Corbeille
+                                    </button>
+                                </form>
+                            </li>
+                            {% endif %}
+                            {% if is_granted('ROLE_ADMIN') or secret.deletedAt is not null %}
+                            <li>
+                                <form method="post" action="{{ path('app_vault_delete', {id: secret.id}) }}"
+                                      onsubmit="return confirm('Supprimer définitivement ?')" style="margin:0;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ secret.id) }}">
+                                    <button type="submit"
+                                            class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 w-100 text-start"
+                                            style="color:#f87171; font-size:0.87rem; background:transparent; border:none; cursor:pointer;">
+                                        <i class="fas fa-times-circle" style="width:15px;"></i> Supprimer définitivement
+                                    </button>
+                                </form>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Modal for showing secret details -->
+<div id="itemModal" style="display:none; position:fixed; inset:0; z-index:2000;">
+    <div id="itemModalBackdrop" style="position:fixed; inset:0; background:rgba(0,0,0,0.6);"></div>
+    <div id="itemModalDialog" style="position:fixed; left:50%; top:50%; transform:translate(-50%, -50%);">
+        <div id="itemModalDialogContent"></div>
+    </div>
+</div>
+
+<script>
+/* ── Collapsible filter sections ── */
+function toggleSection(id, titleEl) {
+    const section = document.getElementById(id);
+    const icon = titleEl.querySelector('i');
+    const isHidden = section.style.display === 'none';
+    section.style.display = isHidden ? 'block' : 'none';
+    titleEl.classList.toggle('collapsed', !isHidden);
+}
+
+/* ── Dropdown menus ── */
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.custom-dropdown-trigger').forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menu = this.nextElementSibling;
+            document.querySelectorAll('.custom-dropdown-menu').forEach(m => {
+                if (m !== menu) m.style.display = 'none';
+            });
+            menu.style.display = (!menu.style.display || menu.style.display === 'none') ? 'block' : 'none';
+        });
+    });
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.style.display = 'none');
+    });
+});
+
+/* ── Search ── */
+document.getElementById('searchInput')?.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.secret-row').forEach(row => {
+        row.style.display = row.dataset.name.includes(q) ? 'grid' : 'none';
+    });
+});
+
+/* ── Click-to-open modal (Vaultwarden-like) ── */
+function openItemModal(url) {
+    const modal = document.getElementById('itemModal');
+    const backdrop = document.getElementById('itemModalBackdrop');
+    const dialog = document.getElementById('itemModalDialogContent');
+    if (!modal || !dialog) return;
+    modal.style.display = 'block';
+    dialog.innerHTML = '<div style="padding:28px; background:#161b27; border-radius:12px; border:1px solid #2a2f3e; color:#9ca3af;">Chargement...</div>';
+    window._modalSourceUrl = url;
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.text()).then(html => { dialog.innerHTML = html; initModalBehavior(dialog); });
+}
+
+function closeItemModal() {
+    const modal = document.getElementById('itemModal');
+    const dialog = document.getElementById('itemModalDialogContent');
+    if (modal) modal.style.display = 'none';
+    if (dialog) dialog.innerHTML = '';
+    window._modalSourceUrl = null;
+}
+
+document.addEventListener('click', function(e){
+    // open modal when clicking a secret row (but ignore clicks on controls)
+    const row = e.target.closest('.secret-row');
+    if (!row) return;
+    if (e.target.closest('.custom-dropdown-trigger') || e.target.closest('.custom-dropdown-menu') || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+    const url = row.dataset.url;
+    if (url) openItemModal(url);
+});
+
+document.getElementById('itemModalBackdrop')?.addEventListener('click', closeItemModal);
+document.getElementById('itemModalBackdrop')?.addEventListener('click', closeItemModal);
+
+// Initialize behavior for modal content (form submit via AJAX, decrypted JSON parsing, copy/toggle)
+function initModalBehavior(container) {
+    // handle master password form submission inside modal
+    const form = container.querySelector('#modalMasterForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = new FormData(form);
+            const action = window._modalSourceUrl || form.action || window.location.href;
+            fetch(action, { method: 'POST', body: data, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
+                .then(html => {
+                    container.innerHTML = html;
+                    initModalBehavior(container);
+                });
+        });
+    }
+
+    // If decrypted JSON is present, try to render it nicely
+    const pre = container.querySelector('#modalDecrypted');
+    if (pre) {
+        try {
+            const payload = JSON.parse(pre.innerText);
+            // build a friendly view for password-type payloads
+            if (payload && payload.type === 'password') {
+                const wrapper = document.createElement('div');
+                wrapper.style.display = 'flex';
+                wrapper.style.flexDirection = 'column';
+                wrapper.style.gap = '12px';
+
+                const field = (label, value, opts = {}) => {
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.justifyContent = 'space-between';
+                    row.style.alignItems = 'center';
+                    const left = document.createElement('div');
+                    left.innerHTML = `<div style="font-size:0.75rem;color:#4b5563">${label}</div><div style="color:#e0e0e0">${value}</div>`;
+                    row.appendChild(left);
+                    if (opts.copy) {
+                        const btn = document.createElement('button');
+                        btn.textContent = 'Copier';
+                        btn.style.background = '#1e2535'; btn.style.color = '#6fbfff'; btn.style.border = '1px solid #2a2f3e'; btn.style.borderRadius = '6px'; btn.style.padding = '6px 8px';
+                        btn.addEventListener('click', () => navigator.clipboard.writeText(opts.copy));
+                        row.appendChild(btn);
+                    }
+                    if (opts.toggle) {
+                        const toggle = document.createElement('button');
+                        toggle.textContent = 'Afficher';
+                        toggle.style.marginLeft = '8px';
+                        toggle.addEventListener('click', () => {
+                            const visible = toggle.dataset.visible === '1';
+                            left.querySelector('div:nth-child(2)').textContent = visible ? '●●●●●●●●' : opts.copy;
+                            toggle.textContent = visible ? 'Afficher' : 'Masquer';
+                            toggle.dataset.visible = visible ? '0' : '1';
+                        });
+                        row.appendChild(toggle);
+                    }
+                    return row;
+                };
+
+                if (payload.username !== undefined) wrapper.appendChild(field('Nom d\'utilisateur', payload.username, { copy: payload.username }));
+                if (payload.password !== undefined) wrapper.appendChild(field('Mot de passe', '●●●●●●●●', { copy: payload.password, toggle: true }));
+                if (payload.website) wrapper.appendChild(field('Site web', payload.website, { copy: payload.website }));
+                if (payload.notes) wrapper.appendChild(field('Notes', payload.notes, { copy: payload.notes }));
+
+                pre.parentElement.replaceWith(wrapper);
+            } else {
+                // pretty-print JSON for other types
+                pre.textContent = JSON.stringify(payload, null, 2);
+            }
+        } catch (e) {
+            // not JSON — leave as-is
+        }
+    }
+
+    // attach copy buttons inside container
+    container.querySelectorAll('[data-copy-text]').forEach(btn => {
+        btn.addEventListener('click', () => navigator.clipboard.writeText(btn.dataset.copyText));
+    });
+}
+
+// close modal on Escape
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeItemModal(); });
+
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sécurité{% endblock %}
+
+{% block body %}
+<div class="sb-settings">
+    <div class="sb-hero">
+        <div class="sb-hero__left">
+            <div class="sb-hero__badge">SÉCURITÉ</div>
+            <h1 class="sb-hero__title">Sécurité du compte</h1>
+            <p class="sb-hero__sub">Contrôlez le comportement de votre session et protégez vos accès.</p>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="sb-flash sb-flash--{{ label == 'error' ? 'danger' : 'success' }}">
+                <i class="fas fa-{{ label == 'error' ? 'exclamation-circle' : 'check-circle' }}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="sb-grid">
+        <div class="sb-card">
+            <div class="sb-card__header">
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-shield-alt"></i></span>
+                <div>
+                    <h3>Paramètres de session</h3>
+                    <p class="sb-card__desc">Choisissez la durée d’inactivité avant verrouillage et l’action à appliquer.</p>
+                </div>
+            </div>
+
+            <form method="post" action="{{ path('app_settings_security') }}" novalidate>
+                <input type="hidden" name="action" value="save_security">
+
+                <div class="sb-field">
+                    <label for="session_timeout">Durée avant expiration</label>
+                    <select id="session_timeout" name="session_timeout" class="sb-input">
+                        <option value="5" {{ app.session.get('settings_security_timeout', 15) == 5 ? 'selected' : '' }}>5 minutes</option>
+                        <option value="15" {{ app.session.get('settings_security_timeout', 15) == 15 ? 'selected' : '' }}>15 minutes</option>
+                        <option value="30" {{ app.session.get('settings_security_timeout', 15) == 30 ? 'selected' : '' }}>30 minutes</option>
+                        <option value="60" {{ app.session.get('settings_security_timeout', 15) == 60 ? 'selected' : '' }}>60 minutes</option>
+                    </select>
+                </div>
+
+                <div class="sb-field">
+                    <label for="timeout_action">Action après expiration</label>
+                    <select id="timeout_action" name="timeout_action" class="sb-input">
+                        <option value="lock" {{ app.session.get('settings_security_action', 'lock') == 'lock' ? 'selected' : '' }}>Verrouiller</option>
+                        <option value="logout" {{ app.session.get('settings_security_action', 'lock') == 'logout' ? 'selected' : '' }}>Déconnecter</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="sb-btn sb-btn--primary">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+            </form>
+        </div>
+
+        <div class="sb-card sb-card--danger">
+            <div class="sb-card__header">
+                <span class="sb-card__icon sb-card__icon--red"><i class="fas fa-exclamation-triangle"></i></span>
+                <div>
+                    <h3>Conseils de sécurité</h3>
+                    <p class="sb-card__desc">Maintenez votre compte protégé en utilisant un mot de passe fort et en fermant votre session lorsque vous avez terminé.</p>
+                </div>
+            </div>
+
+            <ul class="sb-list">
+                <li>Ne partagez jamais votre mot de passe.</li>
+                <li>Vérifiez régulièrement les sessions actives.</li>
+                <li>Activez le verrouillage automatique pour plus de sécurité.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sb-list {
+        margin: 18px 0 0 0;
+        padding-left: 20px;
+        color: #cbd5e1;
+        line-height: 1.7;
+    }
+    .sb-list li {
+        margin-bottom: 10px;
+    }
+    .sb-checkbox-field {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 16px 0 24px;
+    }
+    .sb-checkbox-field label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.94rem;
+        color: #d1d5db;
+    }
+    .sb-checkbox-field input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #4dd4ac;
+    }
+</style>
+{% endblock %}
