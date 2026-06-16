@@ -20,7 +20,7 @@ class WebAuthnCredential
     private User $user;
 
     /** Identifiant binaire retourné par l'authenticator (base64url encodé) */
-    #[ORM\Column(type: 'text', unique: true)]
+    #[ORM\Column(type: 'string', length: 255, unique: true)]
     private string $credentialId;
 
     /** Clé publique COSE encodée en base64 */
