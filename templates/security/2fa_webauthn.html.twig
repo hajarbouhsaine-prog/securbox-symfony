@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vérification FIDO2 — SecurBox</title>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-body, #0d1117);
+            margin: 0;
+        }
+        .twofa-card {
+            background: var(--bg-card, #161b27);
+            border: 1px solid var(--border-main, #2a2f3e);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        .twofa-icon {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            background: rgba(111,191,255,0.1);
+            border: 1px solid rgba(111,191,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 1.6rem;
+            color: #6fbfff;
+        }
+        .twofa-title {
+            color: var(--text-primary, #e0e0e0);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .twofa-sub {
+            color: var(--text-muted, #9ca3af);
+            font-size: 0.88rem;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+        .twofa-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6, #6fbfff);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: opacity 0.2s;
+        }
+        .twofa-btn:hover   { opacity: 0.9; }
+        .twofa-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .twofa-status {
+            margin-top: 18px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+        .twofa-status--loading {
+            background: rgba(111,191,255,0.06);
+            border: 1px solid rgba(111,191,255,0.15);
+            color: var(--text-secondary, #9ca3af);
+            display: flex;
+        }
+        .twofa-status--success {
+            background: rgba(77,212,172,0.08);
+            border: 1px solid rgba(77,212,172,0.3);
+            color: #4dd4ac;
+            display: flex;
+        }
+        .twofa-status--error {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #f87171;
+            display: flex;
+        }
+        .twofa-logout {
+            margin-top: 20px;
+            font-size: 0.82rem;
+            color: var(--text-muted, #6b7280);
+        }
+        .twofa-logout a {
+            color: #6fbfff;
+            text-decoration: none;
+        }
+        .twofa-logout a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="twofa-card">
+        <div class="twofa-icon">
+            <i class="fas fa-fingerprint"></i>
+        </div>
+
+        <div class="twofa-title">Vérification FIDO2</div>
+        <div class="twofa-sub">
+            Appuyez sur le bouton ci-dessous puis utilisez<br>
+            votre clé de sécurité ou TouchID pour continuer.
+        </div>
+
+        <button id="btn-verify" class="twofa-btn" onclick="startAuth()">
+            <i class="fas fa-usb"></i>
+            Vérifier avec ma clé de sécurité
+        </button>
+
+        <div id="status" class="twofa-status">
+            <i id="status-icon" class="fas fa-spinner fa-spin"></i>
+            <span id="status-msg">En attente…</span>
+        </div>
+
+        <div class="twofa-logout">
+            <a href="{{ path('app_logout') }}">
+                <i class="fas fa-arrow-left"></i> Retour à la connexion
+            </a>
+        </div>
+    </div>
+
+<script>
+function b64uToBuffer(b64u) {
+    const b64    = b64u.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64.padEnd(b64.length + (4 - b64.length % 4) % 4, '=');
+    const bin    = atob(padded);
+    const bytes  = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+}
+
+function bufferToB64u(buf) {
+    const bytes = new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer);
+    let bin = '';
+    for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function setStatus(type, icon, msg) {
+    const el = document.getElementById('status');
+    el.className = 'twofa-status twofa-status--' + type;
+    document.getElementById('status-icon').className = 'fas fa-' + icon + (type === 'loading' ? ' fa-spin' : '');
+    document.getElementById('status-msg').textContent = msg;
+}
+
+async function startAuth() {
+    const btn = document.getElementById('btn-verify');
+    btn.disabled = true;
+    setStatus('loading', 'spinner', 'Récupération du challenge…');
+
+    try {
+        // Étape 1 — options
+        const optRes = await fetch('{{ path("webauthn_auth_options") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        const opts = await optRes.json();
+        if (!optRes.ok) throw new Error(opts.error || 'Erreur serveur');
+
+        opts.challenge = b64uToBuffer(opts.challenge);
+        if (opts.allowCredentials) {
+            opts.allowCredentials = opts.allowCredentials.map(c => ({
+                ...c, id: b64uToBuffer(c.id),
+            }));
+        }
+
+        setStatus('loading', 'spinner', 'Approchez votre clé ou utilisez TouchID…');
+
+        // Étape 2 — navigateur demande l'authenticator
+        const assertion = await navigator.credentials.get({ publicKey: opts });
+
+        setStatus('loading', 'spinner', 'Vérification de la signature…');
+
+        // Étape 3 — envoyer au serveur
+        const payload = {
+            id:       assertion.id,
+            response: {
+                clientDataJSON:    bufferToB64u(assertion.response.clientDataJSON),
+                authenticatorData: bufferToB64u(assertion.response.authenticatorData),
+                signature:         bufferToB64u(assertion.response.signature),
+                userHandle: assertion.response.userHandle
+                    ? bufferToB64u(assertion.response.userHandle)
+                    : null,
+            },
+        };
+
+        const verRes  = await fetch('{{ path("webauthn_auth_verify") }}', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+        });
+        const verData = await verRes.json();
+
+        if (!verRes.ok || !verData.success) {
+            throw new Error(verData.error || 'Vérification échouée');
+        }
+
+        // Succès → rediriger vers le vault
+        setStatus('success', 'check-circle', 'Identité vérifiée ! Redirection…');
+        setTimeout(() => { window.location.href = '{{ path("app_2fa_webauthn_success") }}'; }, 800);
+
+    } catch (err) {
+        console.error('[WebAuthn 2FA]', err);
+        let msg = err.message || 'Erreur inconnue';
+        if (err.name === 'NotAllowedError')   msg = 'Annulé ou délai dépassé. Réessayez.';
+        if (err.name === 'InvalidStateError') msg = 'Clé non reconnue.';
+        if (err.name === 'SecurityError')     msg = 'Erreur de sécurité — utilisez https://localhost:8443';
+        setStatus('error', 'exclamation-circle', msg);
+        btn.disabled = false;
+    }
+}
+
+// Déclencher automatiquement au chargement
+window.addEventListener('load', () => setTimeout(startAuth, 500));
+</script>
+</body>
+</html>

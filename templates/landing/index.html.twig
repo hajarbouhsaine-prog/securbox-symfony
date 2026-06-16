@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SecurBox — Gestionnaire de secrets sécurisé</title>
+    <title>{{ app_name }} — Gestionnaire de secrets sécurisé</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -63,7 +63,7 @@
         /* ── HERO ── */
         .hero {
             min-height: 100vh;
-            display: flex; 
+            display: flex;
             align-items: center;
             justify-content: center;
             padding: 140px 0 80px;
@@ -77,7 +77,7 @@
                         radial-gradient(ellipse 50% 50% at 50% 70%, rgba(77,212,172,0.08) 0%, transparent 60%);
         }
         .hero .container { position: relative; z-index: 1; max-width: 900px; }
-        
+
         .hero-badge {
             display: inline-flex; align-items: center; gap: 8px;
             background: rgba(111,191,255,0.1); border: 1px solid rgba(111,191,255,0.3);
@@ -85,7 +85,7 @@
             padding: 6px 14px; border-radius: 20px; margin-bottom: 24px;
             letter-spacing: 0.03em;
         }
-        
+
         .hero h1 {
             font-size: clamp(2.5rem, 6vw, 4.2rem);
             font-weight: 800;
@@ -97,7 +97,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
+
         .hero p {
             font-size: 1.2rem;
             color: #9ca3af;
@@ -105,10 +105,10 @@
             margin: 0 auto 40px auto;
             line-height: 1.7;
         }
-        .hero-actions { 
-            display: flex; 
-            gap: 16px; 
-            justify-content: center; 
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
             flex-wrap: wrap;
         }
         .btn-hero-primary {
@@ -163,7 +163,7 @@
             margin-bottom: 16px; line-height: 1.2;
         }
         .section-sub { color: #6b7280; font-size: 1rem; line-height: 1.7; max-width: 500px; }
-        
+
         .feature-card {
             background: #161b27;
             border: 1px solid #2a2f3e;
@@ -201,10 +201,10 @@
         .step-title { font-size: 1rem; font-weight: 600; color: #e0e0e0; margin-bottom: 8px; }
         .step-desc { color: #6b7280; font-size: 0.88rem; line-height: 1.65; }
 
-        /* ── INDEPENDENT FINAL SECTION WITH GENEROUS SPACE ── */
+        /* ── FINAL CTA ── */
         .final-cta-section {
-            background: #0f1117; /* Keeps it seamless with the main body color */
-            padding: 160px 0 180px 0; /* Creates an entire screen worth of breathing room */
+            background: #0f1117;
+            padding: 160px 0 180px 0;
             text-align: center;
         }
         .final-cta-section h2 {
@@ -237,11 +237,40 @@
 </head>
 <body>
 
+{# ══════════════════════════════════════════════════════
+   NAVBAR
+   ══════════════════════════════════════════════════════ #}
 <nav class="landing-nav">
     <div class="container">
-        <a href="{{ path('app_landing') }}" class="nav-logo">
-            🔐 SecurBox
+        <a href="{{ path('app_landing') }}" style="text-decoration:none; display:flex; align-items:center; gap:12px;">
+
+            {# ── Logo dynamique (navbar) ── #}
+            {% if app_logo is defined and app_logo is not empty %}
+                <img src="{{ asset('uploads/logos/' ~ app_logo) }}"
+                     alt="{{ app_name }}"
+                     style="width:42px; height:48px; object-fit:contain; flex-shrink:0;">
+            {% else %}
+                <div style="
+                    width:42px; height:48px;
+                    display:grid; place-items:center;
+                    color:#dff3ff; font-size:1.15rem;
+                    background: radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
+                                linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
+                    clip-path: polygon(50% 0, 92% 18%, 82% 82%, 50% 100%, 18% 82%, 8% 18%);
+                    box-shadow: 0 12px 30px rgba(48,107,255,0.28), inset 0 0 0 2px rgba(255,255,255,0.18);
+                    flex-shrink:0;">
+                    <i class="fas fa-lock"></i>
+                </div>
+            {% endif %}
+
+            <div>
+                <div style="font-size:1.3rem; font-weight:700; color:var(--brand-primary, #6fbfff); line-height:1;">
+                    {{ app_name }}
+                </div>
+                <div style="color:#6b7280; font-size:0.75rem; margin-top:2px;">{{ app_slogan }}</div>
+            </div>
         </a>
+
         <div class="nav-links d-none d-md-flex">
             <a href="#features">Fonctionnalités</a>
             <a href="#how">Comment ça marche</a>
@@ -255,6 +284,9 @@
     </div>
 </nav>
 
+{# ══════════════════════════════════════════════════════
+   HERO
+   ══════════════════════════════════════════════════════ #}
 <section class="hero">
     <div class="hero-bg"></div>
     <div class="container">
@@ -274,6 +306,9 @@
     </div>
 </section>
 
+{# ══════════════════════════════════════════════════════
+   STATS
+   ══════════════════════════════════════════════════════ #}
 <section class="stats-section">
     <div class="container">
         <div class="row g-4">
@@ -305,6 +340,9 @@
     </div>
 </section>
 
+{# ══════════════════════════════════════════════════════
+   FEATURES
+   ══════════════════════════════════════════════════════ #}
 <section class="features-section" id="features">
     <div class="container">
         <div class="text-center mb-5">
@@ -344,6 +382,9 @@
     </div>
 </section>
 
+{# ══════════════════════════════════════════════════════
+   COMMENT CA MARCHE
+   ══════════════════════════════════════════════════════ #}
 <section class="how-section" id="how">
     <div class="container">
         <div class="text-center mb-5">
@@ -383,6 +424,9 @@
     </div>
 </section>
 
+{# ══════════════════════════════════════════════════════
+   FINAL CTA
+   ══════════════════════════════════════════════════════ #}
 <section class="final-cta-section">
     <div class="container">
         <h2>Garantissez la sécurité de vos secrets dès aujourd'hui</h2>
@@ -393,11 +437,41 @@
     </div>
 </section>
 
+{# ══════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════ #}
 <footer class="landing-footer">
     <div class="container">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <div class="footer-logo">🔐 SecurBox</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+
+                    {# ── Logo dynamique (footer) ── #}
+                    {% if app_logo is defined and app_logo is not empty %}
+                        <img src="{{ asset('uploads/logos/' ~ app_logo) }}"
+                             alt="{{ app_name }}"
+                             style="width:34px; height:38px; object-fit:contain; flex-shrink:0;">
+                    {% else %}
+                        <div style="
+                            width:34px; height:38px;
+                            display:grid; place-items:center;
+                            color:#dff3ff; font-size:0.95rem;
+                            background: radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
+                                        linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
+                            clip-path: polygon(50% 0, 92% 18%, 82% 82%, 50% 100%, 18% 82%, 8% 18%);
+                            box-shadow: 0 8px 20px rgba(48,107,255,0.28);
+                            flex-shrink:0;">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                    {% endif %}
+
+                    <div>
+                        <div style="font-size:1.1rem; font-weight:700; color:var(--brand-primary, #6fbfff); line-height:1;">
+                            {{ app_name }}
+                        </div>
+                        <div style="color:#6b7280; font-size:0.72rem; margin-top:2px;">{{ app_slogan }}</div>
+                    </div>
+                </div>
             </div>
             <div class="footer-links">
                 <a href="{{ path('app_login') }}">Connexion</a>

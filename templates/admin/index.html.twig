@@ -2,189 +2,439 @@
 {% block title %}Dashboard Admin{% endblock %}
 {% block body %}
 
-<div class="mb-4">
-    <h1 style="color:#e0e0e0; font-size:1.6rem; font-weight:600;">
-        <i class="fas fa-cog me-2" style="color:#6fbfff;"></i>Dashboard Admin
-    </h1>
-    <p style="color:#4b5563; font-size:0.9rem; margin-top:4px;">Vue d'ensemble du système</p>
-</div>
+<div class="adm-wrap">
 
-{# Stats Cards #}
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px;">
-            <div style="width:48px; height:48px; background:#1e3a5f; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-users" style="color:#6fbfff; font-size:1.3rem;"></i>
-            </div>
-            <div>
-                <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">{{ users|length }}</div>
-                <div style="color:#4b5563; font-size:0.82rem;">Utilisateurs</div>
-            </div>
+    {# ── En-tête ── #}
+    <div class="adm-hero">
+        <div>
+            <h1 class="adm-hero__title">
+                <i class="fas fa-shield-alt"></i> Dashboard Admin
+            </h1>
+            <p class="adm-hero__sub">Vue d'ensemble et gestion du système SecurBox</p>
+        </div>
+        <div class="adm-hero__meta">
+            <span class="adm-badge adm-badge--admin"><i class="fas fa-crown"></i> Administrateur</span>
         </div>
     </div>
-    <div class="col-md-3">
-        <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px;">
-            <div style="width:48px; height:48px; background:#1a3a2a; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-shield-alt" style="color:#4dd4ac; font-size:1.3rem;"></i>
-            </div>
-            <div>
-                <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">
-                    {{ users|filter(u => 'ROLE_ADMIN' in u.roles)|length }}
-                </div>
-                <div style="color:#4b5563; font-size:0.82rem;">Administrateurs</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px;">
-            <div style="width:48px; height:48px; background:#3a2e10; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <i class="fas fa-history" style="color:#fbbf24; font-size:1.3rem;"></i>
-            </div>
-            <div>
-                <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">{{ logs|length }}</div>
-                <div style="color:#4b5563; font-size:0.82rem;">Actions récentes</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ path('app_admin_logs') }}" style="text-decoration:none;">
-            <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; padding:20px; display:flex; align-items:center; gap:16px; transition:0.2s;"
-                 onmouseenter="this.style.borderColor='#6fbfff'" onmouseleave="this.style.borderColor='#2a2f3e'">
-                <div style="width:48px; height:48px; background:#2a1a3a; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-list" style="color:#c084fc; font-size:1.3rem;"></i>
-                </div>
-                <div>
-                    <div style="font-size:1.8rem; font-weight:700; color:#e0e0e0;">All</div>
-                    <div style="color:#4b5563; font-size:0.82rem;">Voir tous les logs</div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
 
-{# Users Table #}
-<div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; margin-bottom:24px; overflow:hidden;">
-    <div style="padding:16px 20px; border-bottom:1px solid #2a2f3e; display:flex; justify-content:space-between; align-items:center;">
-        <span style="color:#e0e0e0; font-weight:600; font-size:0.95rem;">
-            <i class="fas fa-users me-2" style="color:#6fbfff;"></i>Gestion des Utilisateurs
-        </span>
-        <span style="color:#4b5563; font-size:0.82rem;">{{ users|length }} utilisateur(s)</span>
+    {# ── Flash messages ── #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="sb-flash sb-flash--{{ label == 'error' ? 'danger' : 'success' }}">
+                <i class="fas fa-{{ label == 'error' ? 'exclamation-circle' : 'check-circle' }}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {# ── Stat cards ── #}
+    <div class="adm-stats">
+        <div class="adm-stat">
+            <div class="adm-stat__icon adm-stat__icon--blue">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="adm-stat__body">
+                <div class="adm-stat__num">{{ users|length }}</div>
+                <div class="adm-stat__lbl">Utilisateurs</div>
+            </div>
+        </div>
+        <div class="adm-stat">
+            <div class="adm-stat__icon adm-stat__icon--red">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="adm-stat__body">
+                <div class="adm-stat__num">{{ users|filter(u => 'ROLE_ADMIN' in u.roles)|length }}</div>
+                <div class="adm-stat__lbl">Administrateurs</div>
+            </div>
+        </div>
+        <div class="adm-stat">
+            <div class="adm-stat__icon adm-stat__icon--green">
+                <i class="fas fa-circle"></i>
+            </div>
+            <div class="adm-stat__body">
+                <div class="adm-stat__num">{{ users|filter(u => u.isActive)|length }}</div>
+                <div class="adm-stat__lbl">Comptes actifs</div>
+            </div>
+        </div>
+        <div class="adm-stat adm-stat--link">
+            <a href="{{ path('app_admin_logs') }}" class="adm-stat__link-inner">
+                <div class="adm-stat__icon adm-stat__icon--purple">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="adm-stat__body">
+                    <div class="adm-stat__num">Logs</div>
+                    <div class="adm-stat__lbl">Voir l'historique complet <i class="fas fa-arrow-right" style="font-size:0.7rem;"></i></div>
+                </div>
+            </a>
+        </div>
     </div>
-    <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr style="border-bottom:1px solid #2a2f3e;">
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Utilisateur</th>
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Rôle</th>
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Statut</th>
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Créé le</th>
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+
+    {# ── Personnalisation ── #}
+    <a href="{{ path('app_admin_app_settings') }}" class="adm-settings-link">
+        <div class="adm-settings-link__icon">
+            <i class="fas fa-paint-brush"></i>
+        </div>
+        <div class="adm-settings-link__text">
+            <strong>Personnalisation de l'application</strong>
+            <span>Modifier le nom, logo et couleurs de SecurBox</span>
+        </div>
+        <i class="fas fa-chevron-right adm-settings-link__arrow"></i>
+    </a>
+
+    {# ── Tableau utilisateurs ── #}
+    <div class="adm-card">
+        <div class="adm-card__head">
+            <div class="adm-card__title">
+                <i class="fas fa-users"></i> Gestion des utilisateurs
+            </div>
+            <span class="adm-pill">{{ users|length }} compte(s)</span>
+        </div>
+
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Inscription</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                 {% for user in users %}
-                <tr style="border-bottom:1px solid #2a2f3e; transition:0.2s;"
-                    onmouseenter="this.style.background='#1a2035'" onmouseleave="this.style.background='transparent'">
-                    <td style="padding:14px 20px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#6fbfff,#4dd4ac); display:flex; align-items:center; justify-content:center; font-weight:700; color:#0f1117; font-size:0.85rem;">
-                                {{ user.email|first|upper }}
+                    <tr>
+                        <td>
+                            <div class="adm-user-cell">
+                                {% set colors = ['#6fbfff,#3b82f6','#4dd4ac,#10b981','#c084fc,#8b5cf6','#f97316,#f59e0b','#f43f5e,#ec4899'] %}
+                                {% set colorIdx = user.email|length % 5 %}
+                                <div class="adm-avatar" style="background: linear-gradient(135deg, {{ colors[colorIdx] }});">
+                                    {{ user.email|first|upper }}
+                                </div>
+                                <span class="adm-user-email">{{ user.email }}</span>
                             </div>
-                            <span style="color:#e0e0e0; font-size:0.9rem;">{{ user.email }}</span>
-                        </div>
-                    </td>
-                    <td style="padding:14px 20px;">
-                        {% if 'ROLE_ADMIN' in user.roles %}
-                            <span style="background:#3a1a1a; color:#f87171; padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600;">Admin</span>
-                        {% else %}
-                            <span style="background:#1e2535; color:#6fbfff; padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600;">User</span>
-                        {% endif %}
-                    </td>
-                    <td style="padding:14px 20px;">
-                        {% if user.isActive %}
-                            <span style="display:flex; align-items:center; gap:6px; color:#4dd4ac; font-size:0.88rem;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#4dd4ac; display:inline-block;"></span>Actif
-                            </span>
-                        {% else %}
-                            <span style="display:flex; align-items:center; gap:6px; color:#4b5563; font-size:0.88rem;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#4b5563; display:inline-block;"></span>Inactif
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td style="padding:14px 20px; color:#4b5563; font-size:0.88rem;">
-                        {{ user.createdAt|date('d/m/Y') }}
-                    </td>
-                    <td style="padding:14px 20px;">
-                        <form method="post" action="{{ path('app_admin_toggle_user', {id: user.id}) }}">
-                            <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
-                            <button style="background:{{ user.isActive ? '#3a2e10' : '#1a3a2a' }};
-                                           color:{{ user.isActive ? '#fbbf24' : '#4dd4ac' }};
-                                           border:1px solid {{ user.isActive ? '#fbbf24' : '#4dd4ac' }};
-                                           padding:5px 14px; border-radius:6px; font-size:0.82rem; cursor:pointer;">
-                                {{ user.isActive ? 'Désactiver' : 'Activer' }}
-                            </button>
-                        </form>
-                    </td>
-                </tr>
+                        </td>
+                        <td>
+                            {% if 'ROLE_ADMIN' in user.roles %}
+                                <span class="adm-role adm-role--admin"><i class="fas fa-crown"></i> Admin</span>
+                            {% else %}
+                                <span class="adm-role adm-role--user"><i class="fas fa-user"></i> User</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.isActive %}
+                                <span class="adm-status adm-status--active">
+                                    <span class="adm-status__dot"></span> Actif
+                                </span>
+                            {% else %}
+                                <span class="adm-status adm-status--inactive">
+                                    <span class="adm-status__dot"></span> Inactif
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="adm-date">{{ user.createdAt|date('d/m/Y') }}</td>
+                        <td>
+                            <div class="adm-actions">
+                                {# Bouton Activer/Désactiver #}
+                                <form method="post" action="{{ path('app_admin_toggle_user', {id: user.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                                    <button class="adm-btn adm-btn--{{ user.isActive ? 'warn' : 'success' }}"
+                                            title="{{ user.isActive ? 'Désactiver' : 'Activer' }}">
+                                        <i class="fas fa-{{ user.isActive ? 'pause' : 'play' }}"></i>
+                                        {{ user.isActive ? 'Désactiver' : 'Activer' }}
+                                    </button>
+                                </form>
+
+                                {# Bouton Supprimer — uniquement pour les non-admins #}
+                                {% if 'ROLE_ADMIN' not in user.roles and user != app.user %}
+                                    <button class="adm-btn adm-btn--danger"
+                                            onclick="confirmDelete({{ user.id }}, '{{ user.email|e('js') }}')">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </button>
+                                    <form id="delete-form-{{ user.id }}"
+                                          method="post"
+                                          action="{{ path('app_admin_delete_user', {id: user.id}) }}"
+                                          style="display:none;">
+                                        <input type="hidden" name="_token"
+                                               value="{{ csrf_token('delete_user_' ~ user.id) }}">
+                                    </form>
+                                {% elseif user == app.user %}
+                                    <span class="adm-self-badge"><i class="fas fa-user-circle"></i> Vous</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ── Dernières actions (aperçu, 10 max) ── #}
+    <div class="adm-card">
+        <div class="adm-card__head">
+            <div class="adm-card__title">
+                <i class="fas fa-history"></i> Dernières actions
+            </div>
+            <a href="{{ path('app_admin_logs') }}" class="adm-see-all">
+                Voir tout <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                        <th>IP</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>
+                            <div class="adm-user-cell">
+                                <div class="adm-avatar adm-avatar--sm">{{ log.user.email|first|upper }}</div>
+                                <span class="adm-user-email">{{ log.user.email }}</span>
+                            </div>
+                        </td>
+                        <td><span class="adm-action-badge adm-action--{{ log.action|lower }}">{{ log.action }}</span></td>
+                        <td class="adm-mono">{{ log.ipAddress }}</td>
+                        <td class="adm-date">{{ log.createdAt|date('d/m/Y H:i') }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>{# /adm-wrap #}
+
+{# ── Modal confirmation suppression ── #}
+<div id="delete-modal" class="adm-modal-overlay" style="display:none;" onclick="closeDeleteModal(event)">
+    <div class="adm-modal">
+        <div class="adm-modal__icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="adm-modal__title">Supprimer ce compte ?</h3>
+        <p class="adm-modal__body">
+            Le compte <strong id="delete-email"></strong> sera supprimé définitivement,
+            ainsi que tous ses secrets et données associées. Cette action est irréversible.
+        </p>
+        <div class="adm-modal__actions">
+            <button class="adm-btn adm-btn--ghost" onclick="closeDeleteModal()">Annuler</button>
+            <button class="adm-btn adm-btn--danger" id="delete-confirm-btn" onclick="submitDelete()">
+                <i class="fas fa-trash"></i> Supprimer définitivement
+            </button>
+        </div>
     </div>
 </div>
 
-{# Logs Table #}
-<div style="background:#161b27; border:1px solid #2a2f3e; border-radius:10px; overflow:hidden;">
-    <div style="padding:16px 20px; border-bottom:1px solid #2a2f3e; display:flex; justify-content:space-between; align-items:center;">
-        <span style="color:#e0e0e0; font-weight:600; font-size:0.95rem;">
-            <i class="fas fa-history me-2" style="color:#fbbf24;"></i>Dernières Actions
-        </span>
-        <a href="{{ path('app_admin_logs') }}" style="color:#6fbfff; font-size:0.82rem; text-decoration:none;">
-            Voir tout <i class="fas fa-arrow-right ms-1"></i>
-        </a>
-    </div>
-    <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr style="border-bottom:1px solid #2a2f3e;">
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Utilisateur</th>
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Action</th>
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">IP</th>
-                    <th style="padding:12px 20px; color:#4b5563; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; text-align:left;">Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in logs %}
-                <tr style="border-bottom:1px solid #2a2f3e; transition:0.2s;"
-                    onmouseenter="this.style.background='#1a2035'" onmouseleave="this.style.background='transparent'">
-                    <td style="padding:14px 20px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div style="width:28px; height:28px; border-radius:50%; background:#1e2535; display:flex; align-items:center; justify-content:center; font-size:0.75rem; color:#6fbfff; font-weight:700;">
-                                {{ log.user.email|first|upper }}
-                            </div>
-                            <span style="color:#9ca3af; font-size:0.88rem;">{{ log.user.email }}</span>
-                        </div>
-                    </td>
-                    <td style="padding:14px 20px;">
-                        <span style="padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600;
-                            {% if log.action == 'LOGIN' %}background:#1a3a2a; color:#4dd4ac;
-                            {% elseif log.action == 'DELETE' %}background:#3a1a1a; color:#f87171;
-                            {% elseif log.action == 'VIEW' %}background:#1e2535; color:#6fbfff;
-                            {% elseif log.action == 'CREATE' %}background:#1e3a5f; color:#6fbfff;
-                            {% else %}background:#2a1a3a; color:#c084fc;{% endif %}">
-                            {{ log.action }}
-                        </span>
-                    </td>
-                    <td style="padding:14px 20px; color:#4b5563; font-size:0.85rem; font-family:monospace;">
-                        {{ log.ipAddress }}
-                    </td>
-                    <td style="padding:14px 20px; color:#4b5563; font-size:0.85rem;">
-                        {{ log.createdAt|date('d/m/Y H:i') }}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+<style>
+/* ── Layout ─────────────────────────────────── */
+.adm-wrap { max-width: 1100px; margin: 0 auto; padding: 0 0 40px; }
+
+/* ── Hero ─────────────────────────────────── */
+.adm-hero {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.adm-hero__title {
+    font-size: 1.55rem; font-weight: 700; color: var(--text-primary); margin: 0;
+    display: flex; align-items: center; gap: 10px;
+}
+.adm-hero__title i { color: var(--accent-blue); font-size: 1.3rem; }
+.adm-hero__sub { color: var(--text-muted); font-size: 0.88rem; margin: 4px 0 0; }
+.adm-badge { font-size: 0.72rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.05em; }
+.adm-badge--admin { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.25); }
+
+/* ── Stat Cards ─────────────────────────────── */
+.adm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.adm-stat {
+    background: var(--bg-card); border: 1px solid var(--border-input);
+    border-radius: 12px; padding: 18px 20px;
+    display: flex; align-items: center; gap: 14px; transition: border-color 0.15s;
+}
+.adm-stat:hover { border-color: var(--accent-blue); }
+.adm-stat--link { padding: 0; }
+.adm-stat__link-inner {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 20px; width: 100%; text-decoration: none;
+}
+.adm-stat__icon {
+    width: 46px; height: 46px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.adm-stat__icon--blue   { background: rgba(111,191,255,0.12); color: var(--accent-blue); }
+.adm-stat__icon--red    { background: rgba(248,113,113,0.12); color: #f87171; }
+.adm-stat__icon--green  { background: rgba(77,212,172,0.12);  color: var(--accent-teal); }
+.adm-stat__icon--purple { background: rgba(192,132,252,0.12); color: var(--accent-purple); }
+.adm-stat__num { font-size: 1.7rem; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.adm-stat__lbl { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+/* ── Settings link ─────────────────────────── */
+.adm-settings-link {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--bg-card); border: 1px solid var(--border-input);
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;
+    text-decoration: none; transition: border-color 0.15s;
+}
+.adm-settings-link:hover { border-color: var(--accent-blue); }
+.adm-settings-link__icon {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    background: rgba(111,191,255,0.1); color: var(--accent-blue);
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.adm-settings-link__text { flex: 1; }
+.adm-settings-link__text strong { color: var(--text-primary); font-size: 0.92rem; display: block; }
+.adm-settings-link__text span   { color: var(--text-muted); font-size: 0.8rem; }
+.adm-settings-link__arrow { color: var(--text-muted); font-size: 0.85rem; }
+
+/* ── Card ─────────────────────────────────── */
+.adm-card {
+    background: var(--bg-card); border: 1px solid var(--border-input);
+    border-radius: 12px; overflow: hidden; margin-bottom: 20px;
+}
+.adm-card__head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border-input);
+}
+.adm-card__title { color: var(--text-primary); font-weight: 600; font-size: 0.92rem; display: flex; align-items: center; gap: 8px; }
+.adm-card__title i { color: var(--accent-blue); }
+.adm-pill { background: var(--bg-input); color: var(--text-muted); font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; }
+.adm-see-all { color: var(--accent-blue); font-size: 0.82rem; text-decoration: none; display: flex; align-items: center; gap: 5px; }
+.adm-see-all:hover { text-decoration: underline; }
+
+/* ── Table ─────────────────────────────────── */
+.adm-table-wrap { overflow-x: auto; }
+.adm-table { width: 100%; border-collapse: collapse; }
+.adm-table thead tr { border-bottom: 1px solid var(--border-input); }
+.adm-table th {
+    padding: 10px 18px; color: var(--text-muted); font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; text-align: left;
+}
+.adm-table tbody tr { border-bottom: 1px solid var(--border-subtle); transition: background 0.12s; }
+.adm-table tbody tr:last-child { border-bottom: none; }
+.adm-table tbody tr:hover { background: var(--bg-hover); }
+.adm-table td { padding: 13px 18px; vertical-align: middle; }
+
+/* ── User cell ─────────────────────────────── */
+.adm-user-cell { display: flex; align-items: center; gap: 10px; }
+.adm-avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #fff; font-size: 0.82rem;
+    background: linear-gradient(135deg, #6fbfff, #4dd4ac);
+}
+.adm-avatar--sm { width: 26px; height: 26px; font-size: 0.72rem; background: var(--bg-input); color: var(--accent-blue); }
+.adm-user-email { color: var(--text-primary); font-size: 0.88rem; }
+
+/* ── Role badges ─────────────────────────────── */
+.adm-role { font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; }
+.adm-role--admin { background: rgba(248,113,113,0.12); color: #f87171; }
+.adm-role--user  { background: var(--bg-input); color: var(--accent-blue); }
+
+/* ── Status ─────────────────────────────────── */
+.adm-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+.adm-status__dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.adm-status--active   { color: var(--accent-teal); }
+.adm-status--active   .adm-status__dot { background: var(--accent-teal); box-shadow: 0 0 6px var(--accent-teal); }
+.adm-status--inactive { color: var(--text-muted); }
+.adm-status--inactive .adm-status__dot { background: #4b5563; }
+
+/* ── Date / mono ─────────────────────────────── */
+.adm-date { color: var(--text-muted); font-size: 0.84rem; }
+.adm-mono { color: var(--text-muted); font-size: 0.82rem; font-family: 'Courier New', monospace; }
+
+/* ── Action buttons ─────────────────────────── */
+.adm-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 7px; font-size: 0.78rem; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.adm-btn--warn    { background: rgba(251,191,36,0.1);  color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+.adm-btn--warn:hover { background: rgba(251,191,36,0.2); }
+.adm-btn--success { background: rgba(77,212,172,0.1);  color: var(--accent-teal); border-color: rgba(77,212,172,0.3); }
+.adm-btn--success:hover { background: rgba(77,212,172,0.2); }
+.adm-btn--danger  { background: rgba(248,113,113,0.1); color: #f87171; border-color: rgba(248,113,113,0.3); }
+.adm-btn--danger:hover { background: rgba(248,113,113,0.22); }
+.adm-btn--ghost   { background: var(--bg-input); color: var(--text-secondary); border-color: var(--border-input); }
+.adm-btn--ghost:hover { background: var(--bg-hover); }
+.adm-self-badge { font-size: 0.75rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--bg-input); border-radius: 6px; }
+
+/* ── Action badges (logs) ─────────────────── */
+.adm-action-badge { font-size: 0.73rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+.adm-action--login               { background: rgba(77,212,172,0.12);  color: var(--accent-teal); }
+.adm-action--logout              { background: rgba(111,191,255,0.12); color: var(--accent-blue); }
+.adm-action--delete              { background: rgba(248,113,113,0.12); color: #f87171; }
+.adm-action--view                { background: var(--bg-input);        color: var(--accent-blue); }
+.adm-action--create              { background: rgba(77,212,172,0.08);  color: var(--accent-teal); }
+.adm-action--export              { background: rgba(251,191,36,0.1);   color: #fbbf24; }
+.adm-action--import              { background: rgba(192,132,252,0.1);  color: var(--accent-purple); }
+.adm-action--admin_delete_user   { background: rgba(248,113,113,0.15); color: #f87171; }
+.adm-action--admin_toggle_user   { background: rgba(251,191,36,0.1);   color: #fbbf24; }
+.adm-action--webauthn_registered { background: rgba(77,212,172,0.1);   color: var(--accent-teal); }
+.adm-action--password_changed    { background: rgba(192,132,252,0.1);  color: var(--accent-purple); }
+
+/* ── Modal ─────────────────────────────────── */
+.adm-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; backdrop-filter: blur(4px);
+}
+.adm-modal {
+    background: var(--bg-card); border: 1px solid var(--border-input);
+    border-radius: 16px; padding: 32px 28px; max-width: 440px; width: 90%;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.adm-modal__icon {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: rgba(248,113,113,0.12); color: #f87171;
+    font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+}
+.adm-modal__title { color: var(--text-primary); font-size: 1.1rem; font-weight: 700; margin: 0 0 10px; }
+.adm-modal__body  { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0 0 24px; }
+.adm-modal__body strong { color: var(--text-primary); }
+.adm-modal__actions { display: flex; gap: 10px; justify-content: center; }
+
+@media (max-width: 900px) {
+    .adm-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .adm-stats { grid-template-columns: 1fr 1fr; }
+    .adm-actions { flex-direction: column; }
+}
+</style>
+
+<script>
+let currentDeleteId = null;
+
+function confirmDelete(userId, email) {
+    currentDeleteId = userId;
+    document.getElementById('delete-email').textContent = email;
+    document.getElementById('delete-modal').style.display = 'flex';
+}
+
+function closeDeleteModal(event) {
+    if (!event || event.target === document.getElementById('delete-modal')) {
+        document.getElementById('delete-modal').style.display = 'none';
+        currentDeleteId = null;
+    }
+}
+
+function submitDelete() {
+    if (currentDeleteId) {
+        document.getElementById('delete-form-' + currentDeleteId).submit();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDeleteModal();
+});
+</script>
 
 {% endblock %}

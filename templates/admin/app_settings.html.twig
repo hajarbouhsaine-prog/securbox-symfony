@@ -1,0 +1,174 @@
+{% extends 'base.html.twig' %}
+{% block title %}Personnalisation — Admin{% endblock %}
+{% block body %}
+<div class="sb-settings">
+
+    <div class="sb-hero">
+        <div class="sb-hero__left">
+
+            <h1 class="sb-hero__title">Personnalisation de l'application</h1>
+            <p class="sb-hero__sub">Modifiez le nom, le logo et les couleurs de l'application.</p>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="sb-flash sb-flash--{{ label == 'error' ? 'danger' : 'success' }}">
+                <i class="fas fa-{{ label == 'error' ? 'exclamation-circle' : 'check-circle' }}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {# Aperçu actuel — lit directement depuis settings (pas les globals Twig stale) #}
+    <div class="sb-section" style="margin-bottom: 20px;">
+        <div class="sb-section__title">👁️ Aperçu actuel</div>
+        <div class="sb-section__desc">Voici comment l'application apparaît actuellement.</div>
+        <div style="display: flex; align-items: center; gap: 16px; padding: 20px; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border-input);">
+            {% if settings.logoFilename %}
+                <img src="/uploads/app/{{ settings.logoFilename }}" alt="Logo"
+                     style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">
+            {% else %}
+                <div style="width: 42px; height: 48px; display: grid; place-items: center; color: #dff3ff; font-size: 1.15rem;
+                     background: radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
+                     linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
+                     clip-path: polygon(50% 0, 92% 18%, 82% 82%, 50% 100%, 18% 82%, 8% 18%);">
+                    <i class="fas fa-lock"></i>
+                </div>
+            {% endif %}
+            <div>
+                <div style="font-size: 1.4rem; font-weight: 700; color: {{ settings.primaryColor }};">
+                    {{ settings.appName }}
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.85rem;">{{ settings.appSlogan }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# ═══════════════════════════════════════════════════════════
+       FORMULAIRE PRINCIPAL — Nom, Slogan, Couleurs, Upload logo
+       ═══════════════════════════════════════════════════════════ #}
+    <form method="post" enctype="multipart/form-data" action="{{ path('app_admin_app_settings') }}">
+
+        <div class="sb-section">
+            <div class="sb-section__title">📝 Nom & Slogan</div>
+            <div class="sb-section__desc">Ces textes apparaissent dans toute l'application.</div>
+
+            <div class="sb-field">
+                <label>Nom de l'application</label>
+                <input type="text" name="app_name" class="sb-input"
+                       value="{{ settings.appName }}" placeholder="SecurBox" required maxlength="50">
+            </div>
+
+            <div class="sb-field">
+                <label>Slogan / Sous-titre</label>
+                <input type="text" name="app_slogan" class="sb-input"
+                       value="{{ settings.appSlogan }}" placeholder="Coffre-fort numérique" maxlength="100">
+            </div>
+        </div>
+
+        <div class="sb-section">
+            <div class="sb-section__title">🎨 Couleurs</div>
+            <div class="sb-section__desc">Couleurs principales de l'interface.</div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="sb-field">
+                    <label>Couleur primaire</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="color" name="primary_color" value="{{ settings.primaryColor }}"
+                               style="width: 48px; height: 48px; border: none; border-radius: 8px; cursor: pointer; background: none;">
+                        <input type="text" id="primaryHex" value="{{ settings.primaryColor }}"
+                               class="sb-input" style="flex: 1;" maxlength="7"
+                               oninput="document.querySelector('[name=primary_color]').value = this.value">
+                    </div>
+                </div>
+                <div class="sb-field">
+                    <label>Couleur accent</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="color" name="accent_color" value="{{ settings.accentColor }}"
+                               style="width: 48px; height: 48px; border: none; border-radius: 8px; cursor: pointer; background: none;">
+                        <input type="text" id="accentHex" value="{{ settings.accentColor }}"
+                               class="sb-input" style="flex: 1;" maxlength="7"
+                               oninput="document.querySelector('[name=accent_color]').value = this.value">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sb-section">
+            <div class="sb-section__title">🖼️ Logo</div>
+            <div class="sb-section__desc">Format JPG, PNG, WEBP ou SVG. Maximum 2MB.</div>
+
+            {# Logo actuel — affiché ici mais le bouton Supprimer est dans son PROPRE form en dessous #}
+            {% if settings.logoFilename %}
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 14px; background: var(--bg-body); border-radius: 10px; border: 1px solid var(--border-input);">
+                    <img src="/uploads/app/{{ settings.logoFilename }}" alt="Logo actuel"
+                         style="width: 56px; height: 56px; object-fit: contain; border-radius: 8px;">
+                    <div>
+                        <div style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">Logo actuel</div>
+                        <div style="color: var(--text-muted); font-size: 0.8rem;">{{ settings.logoFilename }}</div>
+                    </div>
+                    {# NOTE: bouton Supprimer intentionnellement absent ici — voir form séparé ci-dessous #}
+                    <span style="margin-left: auto; color: var(--text-muted); font-size: 0.8rem; font-style: italic;">
+                        ↓ Utilisez le bouton "Supprimer" ci-dessous
+                    </span>
+                </div>
+            {% endif %}
+
+            <div class="sb-field">
+                <label>{{ settings.logoFilename ? 'Changer le logo' : 'Uploader un logo' }}</label>
+                <input type="file" name="logo" accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                       class="sb-input" style="padding: 10px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; display: block;">
+                    Si aucun logo n'est uploadé, le logo par défaut (icône cadenas) sera utilisé.
+                </span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <button type="submit" class="sb-btn sb-btn--primary">
+                <i class="fas fa-save"></i> Enregistrer les modifications
+            </button>
+            <a href="{{ path('app_admin_index') }}" class="sb-btn sb-btn--secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+
+    </form>{# ← fin form principal #}
+
+    {# ═══════════════════════════════════════════════════════════
+       FORM SÉPARÉ pour supprimer le logo — JAMAIS imbriqué
+       Un form dans un form = HTML invalide, le bouton soumet le parent
+       ═══════════════════════════════════════════════════════════ #}
+    {% if settings.logoFilename %}
+        <div style="margin-top: 16px; padding: 14px 18px; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <div>
+                <div style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">
+                    <i class="fas fa-trash" style="color: #f87171; margin-right: 8px;"></i>
+                    Supprimer le logo actuel
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 2px;">
+                    L'application reviendra au logo par défaut (icône cadenas).
+                </div>
+            </div>
+            <form method="post" action="{{ path('app_admin_reset_logo') }}">
+                <button type="submit" class="sb-btn sb-btn--outline-danger"
+                        style="font-size: 0.85rem; padding: 8px 16px; white-space: nowrap;"
+                        onclick="return confirm('Supprimer le logo actuel ?')">
+                    <i class="fas fa-trash"></i> Supprimer le logo
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.querySelector('[name=primary_color]').addEventListener('input', function() {
+    document.getElementById('primaryHex').value = this.value;
+});
+document.querySelector('[name=accent_color]').addEventListener('input', function() {
+    document.getElementById('accentHex').value = this.value;
+});
+</script>
+{% endblock %}

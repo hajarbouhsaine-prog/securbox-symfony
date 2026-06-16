@@ -24,6 +24,9 @@ class AccessLog
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $userAgent = null;
 
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $details = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -32,7 +35,7 @@ class AccessLog
     private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'accessLogs')]
-    #[ORM\JoinColumn(name: 'secret_id', referencedColumnName: 'id', onDelete: 'CASCADE')] // <-- LE CHANGEMENT EST ICI !
+    #[ORM\JoinColumn(name: 'secret_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     private ?Secret $secret = null;
 
     public function getId(): ?int
@@ -72,6 +75,18 @@ class AccessLog
     public function setUserAgent(?string $userAgent): static
     {
         $this->userAgent = $userAgent;
+
+        return $this;
+    }
+
+    public function getDetails(): ?string
+    {
+        return $this->details;
+    }
+
+    public function setDetails(?string $details): static
+    {
+        $this->details = $details;
 
         return $this;
     }

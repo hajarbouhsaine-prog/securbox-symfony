@@ -1,0 +1,68 @@
+{% extends 'auth_base.html.twig' %}
+{% block title %}Vérification — SecurBox{% endblock %}
+{% block body %}
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div style="display:flex; justify-content:center; padding-bottom:24px; border-bottom:1px solid var(--border-input); margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                {% if app_logo_url %}
+                    <img src="{{ app_logo_url }}" alt="{{ app_name }}" style="width:38px; height:38px; object-fit:contain; border-radius:6px; flex-shrink:0;">
+                {% else %}
+                    <div class="brand-mark" aria-hidden="true" style="flex-shrink:0;">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                {% endif %}
+                <div>
+                    <div style="font-size:1.5rem; font-weight:700; color:{{ app_primary }}; line-height:1.1; letter-spacing:-0.01em;">{{ app_name }}</div>
+                    <div style="color:var(--text-muted); font-size:0.8rem; margin-top:2px;">{{ app_slogan }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if authenticationError %}
+            <div class="alert alert-danger mb-3">
+                <i class="fas fa-exclamation-circle me-2"></i>Code incorrect ou expiré. Réessayez.
+            </div>
+        {% endif %}
+
+        <h2 style="font-size:1.2rem; font-weight:700; color:var(--text-primary); margin-bottom:8px;">
+            <i class="fas fa-mobile-alt" style="color:{{ app_primary }}; margin-right:8px;"></i>Double authentification
+        </h2>
+        <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:24px; line-height:1.5;">
+            Ouvrez votre application d'authentification et saisissez le code à 6 chiffres.
+        </p>
+
+        <div class="mb-4 p-3" style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; font-size:0.82rem; color:var(--text-secondary); line-height:1.6;">
+            <i class="fas fa-info-circle me-2" style="color:{{ app_primary }};"></i>
+            Le code change toutes les <strong>30 secondes</strong>. Vérifiez que l'heure de votre téléphone est correcte.
+        </div>
+
+        <form method="post" action="{{ path('2fa_login_check') }}">
+            <div class="mb-4">
+                <label class="form-label">Code à 6 chiffres</label>
+                <input type="text" name="_auth_code" class="form-control"
+                       style="font-size:1.8rem; font-weight:700; text-align:center; letter-spacing:0.4em; padding:16px;"
+                       autocomplete="one-time-code" inputmode="numeric"
+                       maxlength="6" autofocus placeholder="______">
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('2fa') }}">
+            <button type="submit" class="btn btn-primary w-100 py-2">
+                <i class="fas fa-shield-alt me-2"></i>Vérifier
+            </button>
+        </form>
+
+        <hr style="border-color:var(--border-input); margin:24px 0;">
+        <div class="text-center">
+            <form method="post" action="{{ path('app_logout') }}" style="margin:0; display:inline;">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+    <button type="submit"
+            style="background:none; border:none; padding:0; cursor:pointer;
+                   color:{{ app_primary }}; font-size:0.88rem; display:inline-flex; align-items:center; gap:4px;">
+        <i class="fas fa-arrow-left"></i>Se déconnecter
+    </button>
+</form>
+        </div>
+    </div>
+</div>
+{% endblock %}

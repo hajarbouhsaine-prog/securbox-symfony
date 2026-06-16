@@ -1,0 +1,8 @@
+scheb_two_factor:
+    totp:
+        enabled: true
+        issuer: "SecurBox"
+        server_name: "SecurBox"
+        template: security/2fa.html.twig
+    security_tokens:
+        - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken

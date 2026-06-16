@@ -1,36 +1,102 @@
 {% extends 'base.html.twig' %}
-{% block title %}Generator{% endblock %}
+{% block title %}Générateur de mots de passe{% endblock %}
 {% block body %}
 <style>
-.generator-card { background:#161b27; border:1px solid #2a2f3e; border-radius:12px; padding:18px; }
-.generator-output { background:#0f1720; border:1px solid #25304a; padding:18px; border-radius:10px; font-family:monospace; font-size:1.05rem; }
-.option-row { display:flex; gap:12px; align-items:center; }
+.generator-card {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-input);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+.generator-output {
+    background: var(--bg-body);
+    border: 1px solid var(--border-input);
+    padding: 18px;
+    border-radius: 10px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+.option-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.option-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+.form-range::-webkit-slider-runnable-track {
+    background-color: var(--border-input, #ccc);
+    border-radius: 4px;
+    height: 6px;
+}
+.form-range::-moz-range-track {
+    background-color: var(--border-input, #ccc);
+    border-radius: 4px;
+    height: 6px;
+}
+
+/* ===== MODAL HISTORIQUE ===== */
+#historyModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+}
+#historyModal.is-open {
+    display: flex;
+}
+#historyModalBox {
+    background: var(--bg-body);
+    border: 1px solid var(--border-input);
+    width: 540px;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+}
 </style>
 
-<h1>Generator</h1>
+<h1>Générateur</h1>
 
-<div class="generator-card">
-    <div style="display:flex; gap:12px; align-items:center; justify-content:space-between;">
-        <div style="flex:1">
+<div class="generator-card" style="margin-top: 20px;">
+    <div style="display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap: wrap;">
+        <div style="flex:1; min-width: 250px;">
             <div class="generator-output" id="output">U4KnB7PSve03Jm</div>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-            <button id="regen" class="btn btn-primary">Regenerate</button>
-            <button id="copy" class="btn btn-outline-secondary">Copy</button>
+            <button id="regen" class="btn btn-primary" style="min-width: 110px;">Régénérer</button>
+            <button id="copy" class="btn btn-outline-secondary" style="min-width: 110px;">Copier</button>
         </div>
     </div>
 
-    <hr style="border-color:#2a2f3e; margin:14px 0;">
+    <hr style="border-color:var(--border-input); margin:20px 0;">
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:24px;">
         <div>
-            <label class="form-label">Length</label>
-            <input type="range" id="length" min="5" max="128" value="14" class="form-range">
-            <div id="lengthVal">14</div>
+            <label class="form-label" style="font-weight: 500; color: var(--text-primary);">Longueur</label>
+            <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                <input type="range" id="length" min="5" max="128" value="14" class="form-range" style="flex: 1; accent-color: var(--primary-color, #3b82f6);">
+                <div id="lengthVal" style="font-weight: 600; min-width: 28px; text-align: right; color: var(--text-primary);">14</div>
+            </div>
         </div>
         <div>
-            <label class="form-label">Include</label>
-            <div class="option-row">
+            <label class="form-label" style="font-weight: 500; color: var(--text-primary);">Inclure</label>
+            <div class="option-row" style="margin-top: 12px;">
                 <label><input type="checkbox" id="upper" checked> A-Z</label>
                 <label><input type="checkbox" id="lower" checked> a-z</label>
                 <label><input type="checkbox" id="digits" checked> 0-9</label>
@@ -39,144 +105,238 @@
         </div>
     </div>
 
-    <div style="margin-top:12px; display:flex; gap:12px;">
-        <div style="flex:1">
-            <label class="form-label">Minimum numbers</label>
-            <input type="number" id="minNumbers" value="1" min="0" style="width:80px;" class="form-control">
+    <div style="margin-top:20px; display:flex; gap:24px; flex-wrap: wrap;">
+        <div style="flex:1; min-width: 200px;">
+            <label class="form-label" style="font-weight: 500; color: var(--text-primary);">Chiffres minimum</label>
+            <input type="number" id="minNumbers" value="1" min="0" style="width:90px; margin-top: 8px;" class="form-control">
         </div>
-        <div style="flex:1">
-            <label class="form-label">Minimum special</label>
-            <input type="number" id="minSpecial" value="0" min="0" style="width:80px;" class="form-control">
+        <div style="flex:1; min-width: 200px;">
+            <label class="form-label" style="font-weight: 500; color: var(--text-primary);">Caractères spéciaux minimum</label>
+            <input type="number" id="minSpecial" value="0" min="0" style="width:90px; margin-top: 8px;" class="form-control">
         </div>
     </div>
 
-    <div style="margin-top:12px;">
-        <label><input type="checkbox" id="avoidAmbiguous"> Avoid ambiguous characters</label>
+    <div style="margin-top:20px; display: flex; align-items: center;">
+        <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
+            <input type="checkbox" id="avoidAmbiguous"> Éviter les caractères ambigus (Il1O0)
+        </label>
     </div>
 
-    <div style="margin-top:16px;">
-        <button id="openHistory" class="btn btn-outline-secondary">Generator history</button>
+    <div style="margin-top:24px;">
+        <button id="openHistory" class="btn btn-outline-secondary">Historique du générateur</button>
     </div>
+</div>
 
-    <!-- History modal -->
-    <div id="historyModal" style="display:none; position:fixed; inset:0; z-index:3000; align-items:center; justify-content:center;">
-        <div style="position:fixed; inset:0; background:rgba(0,0,0,0.6);"></div>
-        <div style="background:#0f1720; border:1px solid #25304a; width:520px; max-width:92%; border-radius:10px; z-index:3001; overflow:hidden;">
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #25304a;">
-                <div style="font-weight:700; color:#e0e0e0;">Generator history</div>
-                <button id="closeHistory" style="background:none;border:none;color:#9ca3af;font-size:1.1rem;cursor:pointer;">✕</button>
-            </div>
-            <div id="historyList" style="padding:12px; display:flex; flex-direction:column; gap:10px; max-height:360px; overflow:auto;"></div>
-            <div style="padding:12px; border-top:1px solid #25304a; display:flex; justify-content:flex-end; gap:8px;">
-                <button id="clearHistory" class="btn btn-primary">Clear history</button>
-            </div>
+<!-- MODAL HISTORIQUE — déplacé HORS de .generator-card et collé avant </body> -->
+<div id="historyModal" role="dialog" aria-modal="true" aria-label="Historique du générateur">
+    <div id="historyModalBox">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border-input); flex-shrink:0;">
+            <div style="font-weight:700; color:var(--text-primary); font-size:1.1rem;">Historique du générateur</div>
+            <button id="closeHistory" style="background:none; border:none; color:#9ca3af; font-size:1.4rem; cursor:pointer; padding:4px 8px; line-height:1;" aria-label="Fermer">✕</button>
+        </div>
+        <div id="historyList" style="padding:16px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex:1; background:var(--bg-card-alt);"></div>
+        <div style="padding:12px 16px; border-top:1px solid var(--border-input); display:flex; justify-content:flex-end; gap:10px; background:var(--bg-body); flex-shrink:0;">
+            <button id="clearHistory" class="btn btn-danger">Effacer l'historique</button>
         </div>
     </div>
 </div>
 
 <script>
-function generate(opts) {
-    const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const lower = 'abcdefghijklmnopqrstuvwxyz';
-    const digits = '0123456789';
-    const symbols = '!@#$%^&*()-_=+[]{};:,.<>?';
-    let pool = '';
-    if (opts.upper) pool += upper;
-    if (opts.lower) pool += lower;
-    if (opts.digits) pool += digits;
-    if (opts.symbols) pool += symbols;
-    if (!pool) return '';
+(function () {
+    'use strict';
 
-    let result = [];
-    // ensure minimum counts
-    for (let i=0;i<opts.minNumbers;i++) result.push(digits[Math.floor(Math.random()*digits.length)]);
-    for (let i=0;i<opts.minSpecial;i++) result.push(symbols[Math.floor(Math.random()*symbols.length)]);
+    // ── Générateur ──────────────────────────────────────────────────────────
+    function generate(opts) {
+        const upper   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lower   = 'abcdefghijklmnopqrstuvwxyz';
+        const digits  = '0123456789';
+        const symbols = '!@#$%^&*()-_=+[]{};:,.<>?';
+        let pool = '';
+        if (opts.upper)   pool += upper;
+        if (opts.lower)   pool += lower;
+        if (opts.digits)  pool += digits;
+        if (opts.symbols) pool += symbols;
+        if (!pool) return '';
 
-    while (result.length < opts.length) {
-        let ch = pool[Math.floor(Math.random()*pool.length)];
-        if (opts.avoidAmbiguous && 'Il1O0'.includes(ch)) continue;
-        result.push(ch);
+        let result = [];
+
+        // Minimums garantis
+        const digitPool  = opts.digits  ? digits  : '';
+        const symbolPool = opts.symbols ? symbols : '';
+        for (let i = 0; i < opts.minNumbers && digitPool;  i++) result.push(digitPool[Math.floor(Math.random() * digitPool.length)]);
+        for (let i = 0; i < opts.minSpecial && symbolPool; i++) result.push(symbolPool[Math.floor(Math.random() * symbolPool.length)]);
+
+        // Ajustement si les minimums dépassent la longueur
+        if (result.length > opts.length) {
+            opts.length = result.length;
+            document.getElementById('length').value      = opts.length;
+            document.getElementById('lengthVal').textContent = opts.length;
+        }
+
+        // Remplissage aléatoire
+        while (result.length < opts.length) {
+            const ch = pool[Math.floor(Math.random() * pool.length)];
+            if (opts.avoidAmbiguous && 'Il1O0'.includes(ch)) continue;
+            result.push(ch);
+        }
+
+        // Fisher-Yates shuffle
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result.join('');
     }
-    // shuffle
-    for (let i = result.length -1; i>0; i--) {
-        const j = Math.floor(Math.random()*(i+1));
-        [result[i], result[j]] = [result[j], result[i]];
+
+    function readOpts() {
+        return {
+            length:         parseInt(document.getElementById('length').value, 10),
+            upper:          document.getElementById('upper').checked,
+            lower:          document.getElementById('lower').checked,
+            digits:         document.getElementById('digits').checked,
+            symbols:        document.getElementById('symbols').checked,
+            minNumbers:     parseInt(document.getElementById('minNumbers').value, 10)  || 0,
+            minSpecial:     parseInt(document.getElementById('minSpecial').value, 10)  || 0,
+            avoidAmbiguous: document.getElementById('avoidAmbiguous').checked
+        };
     }
-    return result.join('');
-}
 
-function readOpts() {
-    return {
-        length: parseInt(document.getElementById('length').value,10),
-        upper: document.getElementById('upper').checked,
-        lower: document.getElementById('lower').checked,
-        digits: document.getElementById('digits').checked,
-        symbols: document.getElementById('symbols').checked,
-        minNumbers: parseInt(document.getElementById('minNumbers').value,10) || 0,
-        minSpecial: parseInt(document.getElementById('minSpecial').value,10) || 0,
-        avoidAmbiguous: document.getElementById('avoidAmbiguous').checked
-    };
-}
+    function regen() {
+        const pw = generate(readOpts());
+        document.getElementById('output').textContent = pw;
+        if (pw) addToHistory(pw);
+    }
 
-function regen() {
-    const opts = readOpts();
-    const p = generate(opts);
-    document.getElementById('output').textContent = p;
-    addToHistory(p);
-}
+    document.getElementById('regen').addEventListener('click', regen);
 
-document.getElementById('regen').addEventListener('click', regen);
-document.getElementById('copy').addEventListener('click', function(){ navigator.clipboard.writeText(document.getElementById('output').textContent); });
-
-document.getElementById('length').addEventListener('input', function(){ document.getElementById('lengthVal').textContent = this.value; });
-
-// initial
-regen();
-
-// History persistence using localStorage
-const HISTORY_KEY = 'pwHistory_v1';
-function loadHistory() {
-    try {
-        return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    } catch(e) { return []; }
-}
-function saveHistory(arr) { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }
-function addToHistory(value) {
-    const arr = loadHistory();
-    arr.unshift({value: value, ts: Date.now()});
-    // limit to 50
-    if (arr.length > 50) arr.length = 50;
-    saveHistory(arr);
-    renderHistoryList();
-}
-
-function renderHistoryList() {
-    const list = document.getElementById('historyList');
-    if (!list) return;
-    list.innerHTML = '';
-    const arr = loadHistory();
-    arr.forEach(item => {
-        const row = document.createElement('div');
-        row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.justifyContent='space-between'; row.style.background='#0f1720'; row.style.padding='10px'; row.style.borderRadius='8px';
-        const left = document.createElement('div'); left.style.display='flex'; left.style.flexDirection='column';
-        const val = document.createElement('div'); val.textContent = item.value; val.style.fontFamily='monospace'; val.style.color='#e0e0e0';
-        const ts = document.createElement('div'); ts.textContent = new Date(item.ts).toLocaleString(); ts.style.fontSize='0.77rem'; ts.style.color='#9ca3af';
-        left.appendChild(val); left.appendChild(ts);
-        const btns = document.createElement('div'); btns.style.display='flex'; btns.style.gap='8px';
-        const copy = document.createElement('button'); copy.textContent='📋'; copy.title='Copy'; copy.style.cursor='pointer'; copy.style.background='transparent'; copy.style.border='none'; copy.style.fontSize='1rem';
-        copy.addEventListener('click', () => { navigator.clipboard.writeText(item.value); });
-        btns.appendChild(copy);
-        row.appendChild(left); row.appendChild(btns);
-        list.appendChild(row);
+    document.getElementById('copy').addEventListener('click', function () {
+        const btn = this;
+        navigator.clipboard.writeText(document.getElementById('output').textContent).then(() => {
+            btn.textContent = 'Copié !';
+            setTimeout(() => { btn.textContent = 'Copier'; }, 1500);
+        });
     });
-}
 
-document.getElementById('openHistory').addEventListener('click', function(){ renderHistoryList(); document.getElementById('historyModal').style.display='flex'; });
-document.getElementById('closeHistory').addEventListener('click', function(){ document.getElementById('historyModal').style.display='none'; });
-document.getElementById('clearHistory').addEventListener('click', function(){ if(!confirm('Clear generator history?')) return; localStorage.removeItem(HISTORY_KEY); renderHistoryList(); });
+    document.getElementById('length').addEventListener('input', function () {
+        document.getElementById('lengthVal').textContent = this.value;
+    });
 
-// render initial history so copy buttons available if user opens
-renderHistoryList();
+    // ── Historique (localStorage) ────────────────────────────────────────────
+    const HISTORY_KEY = 'pwHistory_v1';
+
+    function loadHistory() {
+        try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+        catch (e) { return []; }
+    }
+
+    function saveHistory(arr) {
+        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }
+        catch (e) { console.warn('localStorage indisponible', e); }
+    }
+
+    function addToHistory(value) {
+        const arr = loadHistory();
+        // Évite le doublon strictement consécutif
+        if (arr.length > 0 && arr[0].value === value) return;
+        arr.unshift({ value, ts: Date.now() });
+        if (arr.length > 50) arr.length = 50;
+        saveHistory(arr);
+    }
+
+    function renderHistoryList() {
+        const list = document.getElementById('historyList');
+        list.innerHTML = '';
+        const arr = loadHistory();
+
+        if (arr.length === 0) {
+            list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-secondary);font-style:italic;">Aucun mot de passe généré pour le moment</div>';
+            return;
+        }
+
+        arr.forEach(function (item) {
+            const row = document.createElement('div');
+            Object.assign(row.style, {
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'var(--bg-body)', padding: '12px', borderRadius: '8px',
+                border: '1px solid var(--border-input)', gap: '12px'
+            });
+
+            const left = document.createElement('div');
+            Object.assign(left.style, { display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: '1' });
+
+            const val = document.createElement('div');
+            val.textContent = item.value;
+            Object.assign(val.style, { fontFamily: 'monospace', color: 'var(--text-primary)', fontSize: '1rem', wordBreak: 'break-all' });
+
+            const ts = document.createElement('div');
+            ts.textContent = new Date(item.ts).toLocaleString('fr-FR');
+            Object.assign(ts.style, { fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' });
+
+            left.appendChild(val);
+            left.appendChild(ts);
+
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = '📋 Copier';
+            Object.assign(copyBtn.style, {
+                cursor: 'pointer', background: 'var(--bg-card-alt)',
+                border: '1px solid var(--border-input)', borderRadius: '6px',
+                padding: '6px 12px', fontSize: '0.85rem', color: 'var(--text-primary)',
+                whiteSpace: 'nowrap', flexShrink: '0'
+            });
+            copyBtn.addEventListener('click', function () {
+                navigator.clipboard.writeText(item.value).then(() => {
+                    copyBtn.textContent = '✅ Copié !';
+                    copyBtn.style.background = 'var(--primary-color, #3b82f6)';
+                    copyBtn.style.color = '#fff';
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋 Copier';
+                        copyBtn.style.background = 'var(--bg-card-alt)';
+                        copyBtn.style.color = 'var(--text-primary)';
+                    }, 1200);
+                });
+            });
+
+            row.appendChild(left);
+            row.appendChild(copyBtn);
+            list.appendChild(row);
+        });
+    }
+
+    // ── Modal ────────────────────────────────────────────────────────────────
+    const modal = document.getElementById('historyModal');
+
+    function openModal() {
+        renderHistoryList();
+        modal.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.classList.remove('is-open');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('openHistory').addEventListener('click', openModal);
+    document.getElementById('closeHistory').addEventListener('click', closeModal);
+
+    // Clic sur l'overlay (fond noir) → ferme le modal
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+
+    // Touche Escape → ferme le modal
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+    });
+
+    document.getElementById('clearHistory').addEventListener('click', function () {
+        if (!confirm('Voulez-vous vraiment vider tout l\'historique des mots de passe ?')) return;
+        localStorage.removeItem(HISTORY_KEY);
+        renderHistoryList();
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    regen();
+})();
 </script>
-
 {% endblock %}

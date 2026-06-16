@@ -4,22 +4,22 @@
 
 <div style="max-width:520px; margin:0 auto; padding-bottom:48px;">
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:28px;">
-        <h1 style="color:#e0e0e0; font-size:1.35rem; font-weight:600; margin:0;">
-            <i class="fas fa-layer-group" style="color:#6fbfff;"></i> Nouvelle Collection
+        <h1 style="color:var(--text-primary); font-size:1.35rem; font-weight:600; margin:0;">
+            <i class="fas fa-layer-group" style="color:var(--accent-blue);"></i> Nouvelle Collection
         </h1>
     </div>
 
     <form method="post" action="{{ path('app_collection_new') }}">
-        <div style="background:#161b27; border:1px solid #252d3d; border-radius:10px; overflow:hidden; margin-bottom:24px;">
+        <div style="background:var(--bg-card-alt); border:1px solid var(--border-main); border-radius:10px; overflow:hidden; margin-bottom:24px;">
 
             {# Name #}
-            <div style="display:flex; align-items:stretch; min-height:56px; border-bottom:1px solid #1c2233; position:relative;">
+            <div style="display:flex; align-items:stretch; min-height:56px; border-bottom:1px solid var(--border-subtle); position:relative;">
                 <div style="position:relative; flex:1;">
                     <input type="text" name="name" id="colName" placeholder=" " required
                            style="width:100%; height:100%; min-height:56px; background:transparent; border:none; outline:none;
-                                  color:#e0e0e0; font-size:0.92rem; padding:24px 16px 8px;">
+                                  color:var(--text-primary); font-size:0.92rem; padding:24px 16px 8px;">
                     <label for="colName"
-                           style="position:absolute; left:16px; top:10px; font-size:0.7rem; color:#4b5563; pointer-events:none;">
+                           style="position:absolute; left:16px; top:10px; font-size:0.7rem; color:var(--text-muted); pointer-events:none;">
                         Nom de la collection (requis)
                     </label>
                 </div>
@@ -30,9 +30,9 @@
                 <div style="position:relative; flex:1;">
                     <textarea name="description" id="colDesc" placeholder=" "
                               style="width:100%; min-height:90px; background:transparent; border:none; outline:none;
-                                     color:#e0e0e0; font-size:0.92rem; padding:28px 16px 8px; resize:vertical; font-family:inherit;"></textarea>
+                                     color:var(--text-primary); font-size:0.92rem; padding:28px 16px 8px; resize:vertical; font-family:inherit;"></textarea>
                     <label for="colDesc"
-                           style="position:absolute; left:16px; top:10px; font-size:0.7rem; color:#4b5563; pointer-events:none;">
+                           style="position:absolute; left:16px; top:10px; font-size:0.7rem; color:var(--text-muted); pointer-events:none;">
                         Description (optionnel)
                     </label>
                 </div>
@@ -47,7 +47,7 @@
                 <i class="fas fa-save me-2"></i>Créer la collection
             </button>
             <a href="{{ path('app_vault_index') }}"
-               style="background:none; border:1px solid #252d3d; border-radius:8px; color:#6b7280;
+               style="background:none; border:1px solid var(--border-main); border-radius:8px; color:var(--text-muted);
                       font-size:0.9rem; padding:11px 24px; cursor:pointer; text-decoration:none; display:flex; align-items:center;">
                 Annuler
             </a>

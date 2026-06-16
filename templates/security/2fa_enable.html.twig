@@ -1,0 +1,81 @@
+{% extends 'auth_base.html.twig' %}
+{% block title %}Activer le 2FA — SecurBox{% endblock %}
+{% block body %}
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div style="display:flex; justify-content:center; padding-bottom:24px; border-bottom:1px solid var(--border-input); margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                {% if app_logo_url %}
+                    <img src="{{ app_logo_url }}" alt="{{ app_name }}" style="width:38px; height:38px; object-fit:contain; border-radius:6px; flex-shrink:0;">
+                {% else %}
+                    <div class="brand-mark" aria-hidden="true" style="flex-shrink:0;">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                {% endif %}
+                <div>
+                    <div style="font-size:1.5rem; font-weight:700; color:{{ app_primary }}; line-height:1.1; letter-spacing:-0.01em;">{{ app_name }}</div>
+                    <div style="color:var(--text-muted); font-size:0.8rem; margin-top:2px;">{{ app_slogan }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-circle me-2"></i>{{ message }}</div>
+        {% endfor %}
+
+        <h2 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:20px;">
+            <i class="fas fa-mobile-alt" style="color:{{ app_primary }}; margin-right:6px;"></i>Activer la double authentification
+        </h2>
+
+        <div class="mb-3 p-3" style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:10px;">
+            <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem; display:flex; align-items:center; margin-bottom:8px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:{{ app_primary }}; color:#fff; font-size:0.75rem; font-weight:700; margin-right:8px;">1</span>
+                Installez une application
+            </div>
+            <div style="color:var(--text-secondary); font-size:0.83rem; line-height:1.6;">
+                Téléchargez <strong>OTP Auth</strong> ou <strong>Tofu Authenticator</strong> sur votre téléphone.
+            </div>
+        </div>
+
+        <div class="mb-3 p-3" style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:10px;">
+            <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem; display:flex; align-items:center; margin-bottom:8px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:{{ app_primary }}; color:#fff; font-size:0.75rem; font-weight:700; margin-right:8px;">2</span>
+                Scannez le QR code
+            </div>
+            <div style="color:var(--text-secondary); font-size:0.83rem; margin-bottom:12px;">Ouvrez l'application et scannez ce code :</div>
+            <div style="background:#fff; border-radius:12px; padding:16px; text-align:center;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ qrCodeUrl|url_encode }}" alt="QR Code TOTP" style="max-width:180px;">
+            </div>
+            <div style="color:var(--text-secondary); font-size:0.83rem; text-align:center; margin-top:10px;">Ou entrez manuellement :</div>
+            <div style="background:var(--bg-body); border:1px solid var(--border-input); border-radius:8px; padding:12px; font-family:monospace; font-size:0.9rem; color:{{ app_primary }}; text-align:center; letter-spacing:0.08em; word-break:break-all; margin-top:8px;">
+                {{ secret }}
+            </div>
+        </div>
+
+        <div class="mb-3 p-3" style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:10px;">
+            <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem; display:flex; align-items:center; margin-bottom:12px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:{{ app_primary }}; color:#fff; font-size:0.75rem; font-weight:700; margin-right:8px;">3</span>
+                Confirmez avec le code
+            </div>
+            <form method="post" action="{{ path('app_2fa_confirm') }}">
+                <label class="form-label">Code à 6 chiffres généré par l'application</label>
+                <input type="text" name="code" class="form-control mb-3"
+                       style="font-size:1.5rem; font-weight:700; text-align:center; letter-spacing:0.3em;"
+                       autocomplete="one-time-code" inputmode="numeric"
+                       maxlength="6" autofocus placeholder="______">
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="fas fa-check-circle me-2"></i>Confirmer et activer
+                </button>
+            </form>
+        </div>
+
+        <hr style="border-color:var(--border-input); margin:20px 0;">
+        <div class="text-center">
+            <a href="{{ path('app_settings_security') }}" style="color:{{ app_primary }}; text-decoration:none; font-size:0.88rem;">
+                <i class="fas fa-arrow-left me-1"></i>Retour aux paramètres
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

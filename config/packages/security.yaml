@@ -12,29 +12,48 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+
         main:
             user_checker: App\Security\UserChecker
             lazy: true
             provider: app_user_provider
+
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
+                prepare_on_login: true
+                prepare_on_access_denied: true
+
             form_login:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
                 default_target_path: app_vault_index
+
             logout:
                 path: app_logout
                 target: app_login
+
             remember_me:
                 secret: '%kernel.secret%'
                 lifetime: 604800
+
             login_throttling:
                 max_attempts: 5
                 interval: '15 minutes'
 
     access_control:
-    - { path: ^/$, roles: PUBLIC_ACCESS }
-    - { path: ^/login, roles: PUBLIC_ACCESS }
-    - { path: ^/register, roles: PUBLIC_ACCESS }
-    - { path: ^/admin, roles: ROLE_ADMIN }
-    - { path: ^/vault, roles: ROLE_USER }
-    - { path: ^/, roles: ROLE_USER }
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/verify, roles: PUBLIC_ACCESS }
+        - { path: ^/password-hint, roles: PUBLIC_ACCESS }
+        # ── FIDO2 WebAuthn — doit être AVANT la règle ^/2fa ──
+        - { path: ^/2fa/webauthn, roles: ROLE_USER }
+        - { path: ^/webauthn, roles: ROLE_USER }
+        # ── TOTP (scheb bundle) ──
+        - { path: ^/2fa, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS }
+        - { path: ^/logout, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/vault, roles: ROLE_USER }
+        - { path: ^/, roles: ROLE_USER }

@@ -1,160 +1,298 @@
 {% extends 'base.html.twig' %}
-
 {% block title %}Modifier le secret - {{ secret.name }}{% endblock %}
 
 {% block body %}
 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
 
-    {# En-tête avec bouton retour #}
     <div class="mb-4 d-flex align-items-center gap-3">
-        <a href="{{ path('app_vault_index') }}" style="color: #4b5563; text-decoration: none; font-size: 1.1rem;">
+        <a href="{{ path('app_vault_index') }}" style="color: var(--text-muted); text-decoration: none; font-size: 1.1rem;">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <h1 style="color:#e0e0e0; font-size:1.6rem; font-weight:600; margin: 0;">
+        <h1 style="color: var(--text-primary); font-size:1.6rem; font-weight:600; margin: 0;">
             ✏️ Modifier le secret
         </h1>
     </div>
 
-    <div style="background: #161b27; border: 1px solid #2a2f3e; border-radius: 12px; padding: 24px;">
-        
-        {# ÉTAPE 1 : Demande du mot de passe maître pour déchiffrer #}
-        {% if step == 'verify' %}
-            <h4 style="color: #e0e0e0; font-size: 1.1rem; margin-bottom: 8px;">Déchiffrement requis</h4>
-            <p style="color: #4b5563; font-size: 0.9rem; margin-bottom: 20px;">
-                Veuillez saisir votre mot de passe maître pour afficher et modifier les données de ce secret.
-            </p>
+    <div style="background: var(--bg-card-alt); border: 1px solid #2a2f3e; border-radius: 12px; padding: 24px;">
 
-            <form method="post">
-                <input type="hidden" name="_token" value="{{ csrf_token('edit' ~ secret.id) }}">
-                <div class="mb-4">
-                    <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
-                        Mot de passe maître
-                    </label>
-                    <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px; display:flex; align-items:center;">
-                        <i class="fas fa-lock" style="color:#4b5563; margin-right: 12px;"></i>
-                        <input type="password" name="master_password" required placeholder="Saisissez votre mot de passe maître"
-                               style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
-                    </div>
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_token" value="{{ csrf_token('edit' ~ secret.id) }}">
+            <input type="hidden" name="update_secret" value="1">
+            <input type="hidden" name="keep_attachments" id="keepAttachmentsInput" value="[]">
+
+            <div class="mb-4">
+                <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Nom de l'élément</label>
+                <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                    <input type="text" name="name" value="{{ secret.name }}" required
+                           style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
                 </div>
+            </div>
 
-                <button type="submit" class="btn btn-primary w-100" style="padding: 10px; font-weight: 500;">
-                    <i class="fas fa-unlock me-2"></i> Déverrouiller le secret
-                </button>
-            </form>
-
-        {# ÉTAPE 2 : Formulaire de modification une fois déchiffré #}
-        {% else %}
-            <form method="post">
-                <input type="hidden" name="_token" value="{{ csrf_token('edit' ~ secret.id) }}">
-                <input type="hidden" name="master_password" value="{{ app.request.request.get('master_password') }}">
-                <input type="hidden" name="update_secret" value="1">
-
-                {# Champ permanent : Nom du secret #}
-                <div class="mb-4">
-                    <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
-                        Nom de l'élément
-                    </label>
-                    <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
-                        <input type="text" name="name" value="{{ secret.name }}" required
-                               style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
-                    </div>
+            <div class="mb-4">
+                <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Collection</label>
+                <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 8px; padding: 10px 14px;">
+                    <select name="collection_id" style="background: transparent; border: none; outline: none; color: var(--text-primary); width: 100%; font-size: 0.95rem; cursor: pointer;">
+                        <option value="" style="background: var(--bg-card);">Aucune collection</option>
+                        {% for col in collections %}
+                        <option value="{{ col.id }}" style="background: var(--bg-card);"
+                                {{ secret.collection and secret.collection.id == col.id ? 'selected' : '' }}>
+                            {{ col.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
+            </div>
 
-                {# STRUCTURE DES CHAMPS SELON LE TYPE #}
-                {% if secret.type == 'password' %}
-                    
-                    {# Champ Identifiant #}
-                    <div class="mb-4">
-                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
-                            Identifiant
-                        </label>
-                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
-                            <input type="text" id="vault_username" name="username" value=""
-                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
-                        </div>
-                    </div>
-
-                    {# Champ Mot de passe dédié #}
-                    <div class="mb-4">
-                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
-                            Mot de passe
-                        </label>
-                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
-                            <input type="text" id="vault_password" name="password" value="" required
-                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
-                        </div>
-                    </div>
-
-                    {# Champ URL optionnel #}
-                    <div class="mb-4">
-                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
-                            Site web (URL)
-                        </label>
-                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
-                            <input type="text" id="vault_website" name="website" value=""
-                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
-                        </div>
-                    </div>
-
-                {% elseif secret.type == 'note' %}
-                    
-                    <div class="mb-4">
-                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
-                            Contenu de la note sécurisée
-                        </label>
-                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
-                            <textarea name="data" required rows="6"
-                                      style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem; resize: vertical;">{{ decryptedData }}</textarea>
-                        </div>
-                    </div>
-
-                {% else %}
-                    
-                    <div class="mb-4">
-                        <label style="color: #4b5563; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
-                            Données sécurisées
-                        </label>
-                        <div style="background:#0f131a; border:1px solid #2a2f3e; border-radius:8px; padding:10px 14px;">
-                            <input type="text" name="data" value="{{ decryptedData }}" required
-                                   style="background:transparent; border:none; outline:none; color:#e0e0e0; width:100%; font-size:0.95rem;">
-                        </div>
-                    </div>
-
-                {% endif %}
-
-                {# Boutons d'action #}
-                <div class="d-flex gap-3 mt-4">
-                    <a href="{{ path('app_vault_index') }}" class="btn btn-outline-secondary w-50" style="padding: 10px;">
-                        Annuler
-                    </a>
-                    <button type="submit" class="btn btn-success w-50" style="padding: 10px; font-weight: 500; background: #4dd4ac; border-color: #4dd4ac; color: #0f131a;">
-                        <i class="fas fa-save me-2"></i> Enregistrer
-                    </button>
-                </div>
-            </form>
-
-            {# Script JS Safe pour injecter la chaîne JSON décodée dans le formulaire #}
             {% if secret.type == 'password' %}
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Identifiant</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" id="vault_username" name="username" value=""
+                               style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Mot de passe</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" id="vault_password" name="password" value="" required
+                               style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Site web (URL)</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" id="vault_website" name="website" value=""
+                               style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
                 <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        try {
-                            // On récupère en toute sécurité la chaîne JSON brute
-                            const rawData = {{ decryptedData|json_encode|raw }};
-                            const parsedData = JSON.parse(rawData);
-                            
-                            // Injection précise dans chaque champ dédié
-                            if (parsedData.username) document.getElementById('vault_username').value = parsedData.username;
-                            if (parsedData.password) document.getElementById('vault_password').value = parsedData.password;
-                            if (parsedData.website) document.getElementById('vault_website').value = parsedData.website;
-                        } catch (e) {
-                            console.error("Erreur lors du traitement des données du secret:", e);
-                        }
-                    });
+                document.addEventListener('DOMContentLoaded', function() {
+                    try {
+                        var d = JSON.parse({{ decryptedData|json_encode|raw }});
+                        if (d.username) document.getElementById('vault_username').value = d.username;
+                        if (d.password) document.getElementById('vault_password').value = d.password;
+                        if (d.website)  document.getElementById('vault_website').value  = d.website;
+                    } catch(e) {}
+                });
                 </script>
+
+            {% elseif secret.type == 'note' %}
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Contenu de la note sécurisée</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <textarea id="vault_note_content" name="data" required rows="6"
+                                  style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem; resize: vertical;"></textarea>
+                    </div>
+                </div>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    try {
+                        var d = JSON.parse({{ decryptedData|json_encode|raw }});
+                        document.getElementById('vault_note_content').value = d.content || d.note || '';
+                    } catch(e) {
+                        document.getElementById('vault_note_content').value = {{ decryptedData|json_encode|raw }};
+                    }
+                });
+                </script>
+
+            {% elseif secret.type == 'api_key' %}
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Service</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" id="vault_service" name="api_service" value="" style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Clé API</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" id="vault_apikey" name="api_key_value" value="" style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">URL de base</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" id="vault_baseurl" name="api_base_url" value="" style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Environnement</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" id="vault_env" name="api_env" value="" style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    try {
+                        var d = JSON.parse({{ decryptedData|json_encode|raw }});
+                        if (d.service)  document.getElementById('vault_service').value  = d.service;
+                        if (d.key)      document.getElementById('vault_apikey').value   = d.key;
+                        if (d.base_url) document.getElementById('vault_baseurl').value  = d.base_url;
+                        if (d.env)      document.getElementById('vault_env').value      = d.env;
+                    } catch(e) {}
+                });
+                </script>
+
+            {% elseif secret.type == 'identity' %}
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                    <div><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Prénom</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="text" id="vault_firstname" name="id_firstname" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                    <div><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Nom</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="text" id="vault_lastname" name="id_lastname" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                    <div><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Email</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="email" id="vault_email" name="id_email" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                    <div><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Téléphone</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="text" id="vault_phone" name="id_phone" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                    <div><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Entreprise</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="text" id="vault_company" name="id_company" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                    <div><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Ville</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="text" id="vault_city" name="id_city" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                    <div><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Pays</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="text" id="vault_country" name="id_country" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                </div>
+                <div class="mb-4"><label style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; font-weight:600; display:block; margin-bottom:8px;">Adresse</label><div style="background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;"><input type="text" id="vault_address" name="id_address" value="" style="background:transparent; border:none; outline:none; color:var(--text-primary); width:100%; font-size:0.95rem;"></div></div>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    try {
+                        var d = JSON.parse({{ decryptedData|json_encode|raw }});
+                        if (d.firstname) document.getElementById('vault_firstname').value = d.firstname;
+                        if (d.lastname)  document.getElementById('vault_lastname').value  = d.lastname;
+                        if (d.email)     document.getElementById('vault_email').value     = d.email;
+                        if (d.phone)     document.getElementById('vault_phone').value     = d.phone;
+                        if (d.company)   document.getElementById('vault_company').value   = d.company;
+                        if (d.city)      document.getElementById('vault_city').value      = d.city;
+                        if (d.country)   document.getElementById('vault_country').value   = d.country;
+                        if (d.address)   document.getElementById('vault_address').value   = d.address;
+                    } catch(e) {}
+                });
+                </script>
+
+            {% else %}
+                <div class="mb-4">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Données sécurisées</label>
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                        <input type="text" name="data" value="{{ decryptedData }}" required
+                               style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem;">
+                    </div>
+                </div>
             {% endif %}
-            
-        {% endif %}
+
+            {# ── Notes ── #}
+            <div class="mb-4">
+                <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">Notes</label>
+                <div style="background: var(--bg-input); border: 1px solid var(--border-input); border-radius:8px; padding:10px 14px;">
+                    <textarea id="vault_notes" name="notes" rows="3"
+                              style="background:transparent; border:none; outline:none; color: var(--text-primary); width:100%; font-size:0.95rem; resize:vertical;"></textarea>
+                </div>
+            </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                try {
+                    var d = JSON.parse({{ decryptedData|json_encode|raw }});
+                    if (d.notes) document.getElementById('vault_notes').value = d.notes;
+                } catch(e) {}
+            });
+            </script>
+
+            {# ── Pièces jointes existantes ── #}
+            <div class="mb-4">
+                <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                    <i class="fas fa-paperclip me-1"></i>Pièces jointes existantes
+                </label>
+                <div id="existingAttachmentsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+                <div id="noAttachmentsMsg" style="color:var(--text-muted); font-size:0.85rem; display:none;">Aucune pièce jointe.</div>
+            </div>
+
+            {# ── Ajouter de nouveaux fichiers ── #}
+            <div class="mb-4">
+                <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px;">
+                    <i class="fas fa-plus me-1"></i>Ajouter des fichiers (images, PDF, vidéos…)
+                </label>
+                <div style="background: var(--bg-input); border: 1px dashed var(--border-input); border-radius:8px; padding:14px;">
+                    <input type="file" name="attachments[]" id="vault_new_files" multiple
+                           accept="image/*,application/pdf,video/*,.doc,.docx,.xls,.xlsx,.txt"
+                           style="color:var(--text-primary); font-size:0.9rem; width:100%;">
+                    <div style="color:var(--text-muted); font-size:0.75rem; margin-top:6px;">Max 50 Mo par fichier. Images, PDF, vidéos, documents acceptés.</div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-4">
+                <a href="{{ path('app_vault_index') }}"
+                   style="flex:1; text-align:center; padding: 10px; border-radius: 8px;
+                          background: var(--bg-hover); border: 1px solid var(--border-main);
+                          color: var(--text-secondary); text-decoration: none; font-size: 0.9rem;
+                          display: flex; align-items: center; justify-content: center;">
+                    Annuler
+                </a>
+                <button type="submit"
+                        style="flex:1; padding: 10px; border-radius: 8px; border: none; cursor: pointer;
+                               background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+                               color: #0f1117; font-weight: 600; font-size: 0.9rem;">
+                    <i class="fas fa-save me-2"></i> Enregistrer
+                </button>
+            </div>
+        </form>
 
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var keepList = [];
+
+    try {
+        var d = JSON.parse({{ decryptedData|json_encode|raw }});
+        var attachments = d.attachments || [];
+        var list = document.getElementById('existingAttachmentsList');
+        var noMsg = document.getElementById('noAttachmentsMsg');
+        var secretId = {{ secret.id }};
+
+        if (attachments.length === 0) {
+            list.style.display = 'none';
+            noMsg.style.display = 'block';
+        } else {
+            noMsg.style.display = 'none';
+            keepList = attachments.map(function(a) { return a.stored_name; });
+
+            attachments.forEach(function(att) {
+                var attUrl = '/vault/' + secretId + '/attachment/' + encodeURIComponent(att.stored_name);
+                var sizeKo = att.size ? (att.size / 1024).toFixed(1) + ' Ko' : '';
+
+                var iconClass = 'fas fa-file-alt', iconColor = 'var(--accent-blue,#6fbfff)';
+                if (att.mime && att.mime.startsWith('image/')) { iconClass = 'fas fa-file-image'; iconColor = 'var(--accent-warn,#fbbf24)'; }
+                else if (att.mime && att.mime.includes('pdf'))  { iconClass = 'fas fa-file-pdf';   iconColor = 'var(--accent-danger,#f87171)'; }
+                else if (att.mime && att.mime.includes('video')){ iconClass = 'fas fa-file-video'; iconColor = '#a78bfa'; }
+
+                var row = document.createElement('div');
+                row.id = 'att-row-' + att.stored_name;
+                row.style.cssText = 'display:flex; align-items:center; gap:10px; background:var(--bg-input); border:1px solid var(--border-input); border-radius:8px; padding:10px 14px;';
+                row.innerHTML = '<i class="' + iconClass + '" style="font-size:1.1rem; color:' + iconColor + '; flex-shrink:0;"></i>'
+                    + '<div style="flex:1; min-width:0;">'
+                    +   '<div style="color:var(--text-primary); font-size:0.9rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(att.original_name) + '</div>'
+                    +   '<div style="color:var(--text-muted); font-size:0.78rem;">' + esc(att.mime || '') + (sizeKo ? ' · ' + sizeKo : '') + '</div>'
+                    + '</div>'
+                    + '<a href="' + attUrl + '" target="_blank" style="color:var(--accent-blue,#6fbfff); font-size:0.85rem; text-decoration:none; flex-shrink:0;" title="Aperçu"><i class="fas fa-eye"></i></a>'
+                    + '<button type="button" onclick="removeAtt(\'' + escJs(att.stored_name) + '\')" '
+                    +   'style="background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.3); color:#f87171; border-radius:6px; padding:5px 10px; cursor:pointer; font-size:0.85rem; flex-shrink:0;">'
+                    +   '<i class="fas fa-trash"></i> Supprimer'
+                    + '</button>';
+                list.appendChild(row);
+            });
+        }
+        updateKeepInput();
+    } catch(e) { console.error(e); }
+
+    window.removeAtt = function(storedName) {
+        var row = document.getElementById('att-row-' + storedName);
+        if (row) {
+            row.style.opacity = '0.4';
+            row.style.pointerEvents = 'none';
+            var badge = document.createElement('span');
+            badge.style.cssText = 'color:#f87171; font-size:0.78rem; margin-left:8px;';
+            badge.textContent = '(sera supprimé)';
+            row.querySelector('div').appendChild(badge);
+        }
+        keepList = keepList.filter(function(n) { return n !== storedName; });
+        updateKeepInput();
+    };
+
+    function updateKeepInput() {
+        document.getElementById('keepAttachmentsInput').value = JSON.stringify(keepList);
+    }
+    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function escJs(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+});
+</script>
 {% endblock %}

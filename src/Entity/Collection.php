@@ -31,10 +31,11 @@ class Collection
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
+
     /**
      * @var DoctrineCollection<int, Secret>
      */
-    #[ORM\OneToMany(targetEntity: Secret::class, mappedBy: 'collection')]
+    #[ORM\OneToMany(targetEntity: Secret::class, mappedBy: 'collection', cascade: ['remove'], orphanRemoval: true)]
     private DoctrineCollection $secrets;
 
     public function __construct()

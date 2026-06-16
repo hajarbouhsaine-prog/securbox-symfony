@@ -1,0 +1,29 @@
+{# templates/components/_logo.html.twig #}
+{# Usage: include('components/_logo.html.twig', {size: 'sm'|'md'|'lg'}) #}
+
+{% set sizes = {
+    'sm': {w: '34px', h: '38px', font: '0.95rem'},
+    'md': {w: '42px', h: '48px', font: '1.15rem'},
+    'lg': {w: '52px', h: '58px', font: '1.4rem'}
+} %}
+{% set s = sizes[size ?? 'md'] %}
+
+{% if app_logo is defined and app_logo is not empty %}
+    {# Logo uploadé par l'admin #}
+    <img src="{{ asset('uploads/logos/' ~ app_logo) }}"
+         alt="{{ app_name }}"
+         style="width:{{ s.w }}; height:{{ s.h }}; object-fit:contain; flex-shrink:0;">
+{% else %}
+    {# Logo hexagone par défaut — gradient TOUJOURS fixe #}
+    <div style="
+        width:{{ s.w }}; height:{{ s.h }};
+        display:grid; place-items:center;
+        color:#dff3ff; font-size:{{ s.font }};
+        background: radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
+                    linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
+        clip-path: polygon(50% 0, 92% 18%, 82% 82%, 50% 100%, 18% 82%, 8% 18%);
+        box-shadow: 0 12px 30px rgba(48,107,255,0.28), inset 0 0 0 2px rgba(255,255,255,0.18);
+        flex-shrink:0;">
+        <i class="fas fa-lock"></i>
+    </div>
+{% endif %}

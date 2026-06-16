@@ -5,38 +5,38 @@
 {% block body %}
 <style>
     .vault-container {
-        background: #161b27; 
-        border: 1px solid #2a2f3e; 
-        border-radius: 12px; 
+        background: #161b27;
+        border: 1px solid #2a2f3e;
+        border-radius: 12px;
         padding: 32px;
     }
     .vault-card {
-        background: #111827; 
-        border: 1px solid #2a2f3e; 
-        border-radius: 10px; 
+        background: #111827;
+        border: 1px solid #2a2f3e;
+        border-radius: 10px;
         padding: 16px 20px;
         position: relative;
     }
     .vault-label {
-        color: #9ca3af; 
-        font-size: 0.8rem; 
+        color: #9ca3af;
+        font-size: 0.8rem;
         margin-bottom: 6px;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     .vault-value {
-        color: #e0e0e0; 
-        font-size: 1rem; 
+        color: #e0e0e0;
+        font-size: 1rem;
         word-break: break-all;
     }
     .vault-action-btn {
-        background: #1e2535; 
-        color: #6fbfff; 
+        background: #1e2535;
+        color: #6fbfff;
         border: 1px solid #2a2f3e;
-        padding: 6px 12px; 
-        border-radius: 6px; 
-        cursor: pointer; 
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
         font-size: 0.85rem;
         transition: all 0.2s;
     }
@@ -45,9 +45,9 @@
         color: #93c5fd;
     }
     .attachment-preview-box {
-        background: #0f141c; 
-        border: 1px solid #25304a; 
-        border-radius: 8px; 
+        background: #0f141c;
+        border: 1px solid #25304a;
+        border-radius: 8px;
         padding: 12px;
     }
     #toast-notification {
@@ -79,29 +79,19 @@
     <div class="col-md-8 col-lg-7">
         <div class="vault-container">
 
-            {% if decryptedData is null %}
-                {# 1. UNLOCK FORM #}
-                <div style="background:#1e2535; border:1px solid #6fbfff; border-radius:8px; padding:14px 16px; margin-bottom:24px; color:#6fbfff; font-size:0.9rem;">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Entrez votre mot de passe maître pour déchiffrer ce secret.
+            {% if vaultLocked %}
+                <div style="background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.3); border-radius:10px; padding:20px; text-align:center; margin-bottom:20px;">
+                    <i class="fas fa-lock" style="font-size:1.8rem; color:var(--accent-danger,#f87171); margin-bottom:12px; display:block;"></i>
+                    <p style="color:var(--text-primary,#e0e0e0); font-weight:600; margin-bottom:6px;">Coffre verrouillé</p>
+                    <p style="color:var(--text-secondary,#9ca3af); font-size:0.88rem; margin-bottom:16px;">Votre session a expiré. Reconnectez-vous pour accéder à vos secrets.</p>
+                    <a href="{{ path('app_login') }}" style="display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,#6fbfff,#4dd4ac); color:#0f1117; font-weight:700; font-size:0.9rem; padding:10px 24px; border-radius:10px; text-decoration:none;">
+                        <i class="fas fa-sign-in-alt"></i> Se reconnecter
+                    </a>
                 </div>
-                <form method="post">
-                    <div class="mb-4">
-                        <label class="form-label" style="color:#f87171;">
-                            <i class="fas fa-key me-1"></i>Mot de passe maître
-                        </label>
-                        <input type="password" name="master_password" class="form-control bg-dark text-white border-secondary" placeholder="Votre mot de passe maître" required autofocus>
-                    </div>
-                    <button type="submit" class="btn btn-primary px-4 py-2">
-                        <i class="fas fa-unlock me-2"></i>Déchiffrer
-                    </button>
-                </form>
-            {% else %}
-                
-                {# 2. SECURE VISUAL RENDERING #}
+            {% elseif decryptedData is not null %}
+
                 <div style="display:grid; gap:20px; margin-bottom:24px;">
-                    
-                    {# Website Block #}
+
                     {% if decryptedPayload.website is defined and decryptedPayload.website %}
                         <div class="vault-card">
                             <div class="vault-label"><i class="fas fa-link me-1"></i>Site web</div>
@@ -116,7 +106,6 @@
                         </div>
                     {% endif %}
 
-                    {# Login / Username Block (checks both options dynamically) #}
                     {% set userValue = decryptedPayload.username is defined ? decryptedPayload.username : (decryptedPayload.login is defined ? decryptedPayload.login : null) %}
                     {% if userValue %}
                         <div class="vault-card">
@@ -130,7 +119,6 @@
                         </div>
                     {% endif %}
 
-                    {# Password Block with Hide/Show toggle #}
                     {% if decryptedPayload.password is defined and decryptedPayload.password %}
                         <div class="vault-card">
                             <div class="vault-label"><i class="fas fa-lock me-1"></i>Mot de passe</div>
@@ -148,7 +136,6 @@
                         </div>
                     {% endif %}
 
-                    {# Notes Block #}
                     {% set noteData = decryptedPayload.note is defined ? decryptedPayload.note : (decryptedPayload.notes is defined ? decryptedPayload.notes : null) %}
                     {% if noteData %}
                         <div class="vault-card">
@@ -157,42 +144,57 @@
                         </div>
                     {% endif %}
 
-                    {# Attachments Block (Images / Documents) #}
+                    {# ── Pièces jointes — served via secure route, no base64 ── #}
                     {% if decryptedPayload.attachments is defined and decryptedPayload.attachments is not empty %}
                         <div class="vault-card">
                             <div class="vault-label"><i class="fas fa-paperclip me-1"></i>Pièces jointes</div>
                             <div style="display:grid; gap:16px;">
-                                {% for attachment in decryptedPayload.attachments %}
+                                {% for att in decryptedPayload.attachments %}
+                                    {% set attUrl = path('app_vault_attachment', {id: secret.id, filename: att.stored_name}) %}
                                     <div class="attachment-preview-box">
                                         <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                {% if attachment.type starts with 'image/' %}
+                                                {% if att.mime starts with 'image/' %}
                                                     <i class="fas fa-file-image text-warning" style="font-size: 1.2rem;"></i>
-                                                {% elseif 'pdf' in attachment.type %}
+                                                {% elseif 'pdf' in att.mime %}
                                                     <i class="fas fa-file-pdf text-danger" style="font-size: 1.2rem;"></i>
+                                                {% elseif 'video' in att.mime %}
+                                                    <i class="fas fa-file-video text-info" style="font-size: 1.2rem;"></i>
                                                 {% else %}
                                                     <i class="fas fa-file-alt text-info" style="font-size: 1.2rem;"></i>
                                                 {% endif %}
                                                 <div>
-                                                    <div style="color:#e0e0e0; font-weight:500; font-size:0.9rem;">{{ attachment.name }}</div>
-                                                    <div style="color:#9ca3af; font-size:0.75rem;">{{ attachment.size is defined ? attachment.size : 'Fichier' }}</div>
+                                                    <div style="color:#e0e0e0; font-weight:500; font-size:0.9rem;">{{ att.original_name }}</div>
+                                                    <div style="color:#9ca3af; font-size:0.75rem;">
+                                                        {{ att.mime }}
+                                                        {% if att.size is defined %}
+                                                            · {{ (att.size / 1024)|round(1) }} Ko
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <a href="{{ attachment.data }}" download="{{ attachment.name }}" class="vault-action-btn text-decoration-none">
+                                            <a href="{{ attUrl }}" download="{{ att.original_name }}" class="vault-action-btn text-decoration-none">
                                                 <i class="fas fa-download me-1"></i>Télécharger
                                             </a>
                                         </div>
 
-                                        {# Media Previews #}
-                                        {% if attachment.type starts with 'image/' %}
+                                        {# Previews #}
+                                        {% if att.mime starts with 'image/' %}
                                             <div class="text-center mt-2" style="background:#111; border-radius:6px; overflow:hidden;">
-                                                <img src="{{ attachment.data }}" alt="{{ attachment.name }}" style="max-width:100%; height:auto; max-height:280px; object-fit:contain;" />
+                                                <img src="{{ attUrl }}" alt="{{ att.original_name }}" style="max-width:100%; height:auto; max-height:280px; object-fit:contain;" />
                                             </div>
-                                        {% elseif 'pdf' in attachment.type %}
+                                        {% elseif 'pdf' in att.mime %}
                                             <div class="mt-2" style="height:250px; border-radius:6px; overflow:hidden;">
-                                                <object data="{{ attachment.data }}" type="application/pdf" width="100%" height="100%">
-                                                    <p style="color:#9ca3af; font-size:0.85rem; padding:10px;">Aperçu non supporté. <a href="{{ attachment.data }}" download style="color:#6fbfff;">Télécharger</a>.</p>
+                                                <object data="{{ attUrl }}" type="application/pdf" width="100%" height="100%">
+                                                    <p style="color:#9ca3af; font-size:0.85rem; padding:10px;">Aperçu non supporté. <a href="{{ attUrl }}" download style="color:#6fbfff;">Télécharger</a>.</p>
                                                 </object>
+                                            </div>
+                                        {% elseif 'video' in att.mime %}
+                                            <div class="mt-2" style="border-radius:6px; overflow:hidden;">
+                                                <video controls style="width:100%; max-height:280px; border-radius:6px;">
+                                                    <source src="{{ attUrl }}" type="{{ att.mime }}">
+                                                    Votre navigateur ne supporte pas la lecture vidéo.
+                                                </video>
                                             </div>
                                         {% endif %}
                                     </div>
@@ -201,7 +203,6 @@
                         </div>
                     {% endif %}
 
-                    {# Fallback Raw text wrapper if JSON layout data didn't capture fields #}
                     {% if decryptedPayload is null %}
                         <div style="background:#1a3a2a; border:1px solid #4dd4ac; border-radius:8px; padding:20px;">
                             <div style="color:#4dd4ac; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
@@ -214,9 +215,6 @@
                 </div>
 
                 <div class="d-flex gap-3 align-items-center mt-4">
-                    <button onclick="copyToClipboard('{{ decryptedData|e('js') }}')" class="btn btn-outline-light btn-sm px-3">
-                        <i class="fas fa-copy me-1"></i>Copier le JSON brut
-                    </button>
                     <a href="{{ path('app_vault_index') }}" class="text-muted small text-decoration-none">
                         Retour au coffre-fort
                     </a>

@@ -4,11 +4,12 @@
 
 {% block body %}
 <div class="sb-settings">
+
     <div class="sb-hero">
         <div class="sb-hero__left">
-            <div class="sb-hero__badge">APPARENCE</div>
+
             <h1 class="sb-hero__title">Personnalisez votre interface</h1>
-            <p class="sb-hero__sub">Choisissez un thème, une langue et vos préférences d’affichage.</p>
+            <p class="sb-hero__sub">Thème, langue et préférences d'affichage.</p>
         </div>
     </div>
 
@@ -21,96 +22,395 @@
         {% endfor %}
     {% endfor %}
 
-    <div class="sb-grid">
-        <div class="sb-card">
+    {# Pass server-side locale to JS so the page knows what's actually active #}
+    <script>
+        window.SB_LOCALE       = '{{ app.request.locale|default('fr') }}';
+        window.SB_THEME_SERVER = '{{ app.session.get('settings_appearance_theme', 'dark') }}';
+    </script>
+
+    <form method="post" action="{{ path('app_settings_appearance') }}" novalidate id="appearanceForm">
+        <input type="hidden" name="action" value="save_appearance">
+
+        {# ── THEME ── #}
+        <div class="sb-card" style="margin-bottom:20px;">
             <div class="sb-card__header">
                 <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-palette"></i></span>
                 <div>
-                    <h3>Thème et langues</h3>
-                    <p class="sb-card__desc">Sélectionnez le thème et la langue de l’application.</p>
+                    <h3>Thème</h3>
+                    <p class="sb-card__desc">Choisissez l'apparence visuelle de votre coffre-fort.</p>
                 </div>
             </div>
 
-            <form method="post" action="{{ path('app_settings_appearance') }}" novalidate>
-                <input type="hidden" name="action" value="save_appearance">
+            {# Hidden radio inputs — JS sets the checked one on load based on localStorage #}
+            <input type="radio" name="theme" id="r_dark"   value="dark"   style="display:none;">
+            <input type="radio" name="theme" id="r_light"  value="light"  style="display:none;">
+            <input type="radio" name="theme" id="r_system" value="system" style="display:none;">
 
-                <div class="sb-field">
-                    <label for="theme">Thème</label>
-                    <select id="theme" name="theme" class="sb-input">
-                        <option value="system" {{ app.session.get('settings_appearance_theme', 'system') == 'system' ? 'selected' : '' }}>Utiliser le thème du système</option>
-                        <option value="light" {{ app.session.get('settings_appearance_theme', 'system') == 'light' ? 'selected' : '' }}>Clair</option>
-                        <option value="dark" {{ app.session.get('settings_appearance_theme', 'system') == 'dark' ? 'selected' : '' }}>Sombre</option>
-                    </select>
+            <div class="app-theme-picker">
+
+                <div class="app-theme-card" id="tc_dark" onclick="selectTheme('dark')">
+                    <div class="app-theme-preview app-theme-preview--dark">
+                        <div class="atp-sidebar">
+                            <div class="atp-sb-line"></div>
+                            <div class="atp-sb-line" style="width:60%;"></div>
+                            <div class="atp-sb-line" style="width:70%;"></div>
+                        </div>
+                        <div class="atp-content">
+                            <div class="atp-bar"></div>
+                            <div class="atp-row"></div>
+                            <div class="atp-row" style="width:65%;"></div>
+                            <div class="atp-row" style="width:80%;"></div>
+                        </div>
+                    </div>
+                    <div class="app-theme-label">
+                        <i class="fas fa-moon"></i> Sombre
+                    </div>
+                    <div class="app-theme-check"><i class="fas fa-check-circle"></i></div>
                 </div>
 
-                <div class="sb-field">
-                    <label for="language">Langue</label>
-                    <select id="language" name="language" class="sb-input">
-                        <option value="fr" {{ app.request.locale == 'fr' ? 'selected' : '' }}>Français</option>
-                        <option value="en" {{ app.request.locale == 'en' ? 'selected' : '' }}>Anglais</option>
-                        <option value="ar" {{ app.request.locale == 'ar' ? 'selected' : '' }}>Arabe</option>
-                    </select>
+                <div class="app-theme-card" id="tc_light" onclick="selectTheme('light')">
+                    <div class="app-theme-preview app-theme-preview--light">
+                        <div class="atp-sidebar">
+                            <div class="atp-sb-line"></div>
+                            <div class="atp-sb-line" style="width:60%;"></div>
+                            <div class="atp-sb-line" style="width:70%;"></div>
+                        </div>
+                        <div class="atp-content">
+                            <div class="atp-bar"></div>
+                            <div class="atp-row"></div>
+                            <div class="atp-row" style="width:65%;"></div>
+                            <div class="atp-row" style="width:80%;"></div>
+                        </div>
+                    </div>
+                    <div class="app-theme-label">
+                        <i class="fas fa-sun"></i> Clair
+                    </div>
+                    <div class="app-theme-check"><i class="fas fa-check-circle"></i></div>
                 </div>
 
-                <div class="sb-field sb-checkbox-field">
-                    <label for="show_website_icons">
-                        <input id="show_website_icons" name="show_website_icons" type="checkbox"
-                               value="1" {{ app.session.get('settings_appearance_show_icons', true) ? 'checked' : '' }}>
-                        Afficher les icônes des sites et récupérer les URL de changement de mot de passe
-                    </label>
+                <div class="app-theme-card" id="tc_system" onclick="selectTheme('system')">
+                    <div class="app-theme-preview app-theme-preview--system">
+                        <div class="atp-half atp-half--dark">
+                            <div class="atp-sb-line" style="margin:6px 0 0 6px; width:40%;"></div>
+                            <div class="atp-sb-line" style="margin:4px 0 0 6px; width:30%;"></div>
+                        </div>
+                        <div class="atp-half atp-half--light">
+                            <div class="atp-sb-line-l" style="margin:6px 0 0 6px; width:40%;"></div>
+                            <div class="atp-sb-line-l" style="margin:4px 0 0 6px; width:30%;"></div>
+                        </div>
+                    </div>
+                    <div class="app-theme-label">
+                        <i class="fas fa-circle-half-stroke"></i> Système
+                    </div>
+                    <div class="app-theme-check"><i class="fas fa-check-circle"></i></div>
                 </div>
 
-                <button type="submit" class="sb-btn sb-btn--primary">
-                    <i class="fas fa-save"></i> Enregistrer
-                </button>
-            </form>
+            </div>
         </div>
 
-        <div class="sb-card sb-card--danger">
+        {# ── LANGUAGE ── #}
+        <div class="sb-card" style="margin-bottom:20px;">
             <div class="sb-card__header">
-                <span class="sb-card__icon sb-card__icon--red"><i class="fas fa-info-circle"></i></span>
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-globe"></i></span>
                 <div>
-                    <h3>Conseils d’apparence</h3>
-                    <p class="sb-card__desc">Votre sélection améliore votre confort de lecture et adapte l’interface à votre style.</p>
+                    <h3>Langue</h3>
+                    <p class="sb-card__desc">Sélectionnez la langue d'affichage de l'application.</p>
                 </div>
             </div>
 
-            <ul class="sb-list">
-                <li>Choisissez le thème sombre pour un affichage plus doux en faible luminosité.</li>
-                <li>Utilisez la langue française pour une expérience complète en français.</li>
-                <li>Activez les icônes des sites pour retrouver plus rapidement vos identifiants.</li>
-            </ul>
+            {# Hidden radio inputs — JS sets checked based on window.SB_LOCALE #}
+            <input type="radio" name="language" id="lang_fr" value="fr" style="display:none;">
+            <input type="radio" name="language" id="lang_en" value="en" style="display:none;">
+            <input type="radio" name="language" id="lang_ar" value="ar" style="display:none;">
+
+            <div class="app-lang-grid">
+
+                <div class="app-lang-card" id="lc_fr" onclick="selectLang('fr')">
+                    <span class="app-lang-flag">🇫🇷</span>
+                    <span class="app-lang-name">Français</span>
+                    <i class="fas fa-check app-lang-check" id="lcheck_fr" style="display:none;"></i>
+                </div>
+
+                <div class="app-lang-card" id="lc_en" onclick="selectLang('en')">
+                    <span class="app-lang-flag">🇬🇧</span>
+                    <span class="app-lang-name">English</span>
+                    <i class="fas fa-check app-lang-check" id="lcheck_en" style="display:none;"></i>
+                </div>
+
+                <div class="app-lang-card" id="lc_ar" onclick="selectLang('ar')">
+                    <span class="app-lang-flag">🇲🇦</span>
+                    <span class="app-lang-name">العربية</span>
+                    <i class="fas fa-check app-lang-check" id="lcheck_ar" style="display:none;"></i>
+                </div>
+
+            </div>
         </div>
-    </div>
+
+        {# ── OPTIONS D'AFFICHAGE ── #}
+        <div class="sb-card" style="margin-bottom:24px;">
+            <div class="sb-card__header">
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-sliders-h"></i></span>
+                <div>
+                    <h3>Options d'affichage</h3>
+                    <p class="sb-card__desc">Ajustez les préférences de rendu de vos secrets.</p>
+                </div>
+            </div>
+
+            {# OPTION 1 — Website icons #}
+            <div class="app-toggle-item">
+                <div class="app-toggle-info">
+                    <div class="app-toggle-title">
+                        <i class="fas fa-image" style="color:var(--accent-blue); margin-right:6px; font-size:0.82rem;"></i>
+                        Icônes des sites web
+                    </div>
+                    <div class="app-toggle-desc">
+                        Affiche le favicon (petite icône) du site web associé à chaque secret de type
+                        <strong>Mot de passe</strong>. Si activé, l'icône est chargée depuis le domaine du site.
+                        Si désactivé, une icône générique est affichée à la place.
+                    </div>
+                </div>
+                <label class="app-toggle-switch">
+                    <input type="checkbox" name="show_website_icons" value="1"
+                           {{ app.session.get('settings_appearance_show_icons', true) ? 'checked' : '' }}>
+                    <span class="app-toggle-slider"></span>
+                </label>
+            </div>
+
+            {# OPTION 2 — Mask passwords #}
+            <div class="app-toggle-item">
+                <div class="app-toggle-info">
+                    <div class="app-toggle-title">
+                        <i class="fas fa-eye-slash" style="color:var(--accent-purple); margin-right:6px; font-size:0.82rem;"></i>
+                        Masquer les mots de passe par défaut
+                    </div>
+                    <div class="app-toggle-desc">
+                        Quand vous ouvrez un secret, le champ <strong>mot de passe</strong> s'affiche en
+                        <span style="letter-spacing:3px; color:var(--text-muted);">••••••••</span>
+                        par défaut. Vous devez cliquer sur l'œil pour le révéler.
+                        Si désactivé, le mot de passe est visible immédiatement après déchiffrement.
+                    </div>
+                </div>
+                <label class="app-toggle-switch">
+                    <input type="checkbox" name="mask_passwords" value="1"
+                           {{ app.session.get('settings_appearance_mask_pwd', true) ? 'checked' : '' }}>
+                    <span class="app-toggle-slider"></span>
+                </label>
+            </div>
+
+        </div>
+
+        {# ── SAVE ── #}
+        <div style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="sb-btn sb-btn--primary" style="min-width:180px; padding:12px 24px;">
+                <i class="fas fa-save"></i> Enregistrer les préférences
+            </button>
+        </div>
+
+    </form>
 </div>
 
 <style>
-    .sb-list {
-        margin: 18px 0 0 0;
-        padding-left: 20px;
-        color: #cbd5e1;
-        line-height: 1.7;
-    }
-    .sb-list li {
-        margin-bottom: 10px;
-    }
-    .sb-checkbox-field {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        margin: 16px 0 24px;
-    }
-    .sb-checkbox-field label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.94rem;
-        color: #d1d5db;
-    }
-    .sb-checkbox-field input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        accent-color: #4dd4ac;
-    }
+/* ── THEME PICKER ── */
+.app-theme-picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+.app-theme-card {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 14px 10px 12px;
+    border: 2px solid var(--border-input);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+}
+.app-theme-card:hover { border-color: var(--accent-blue); background: var(--bg-hover); }
+.app-theme-card.selected {
+    border-color: var(--accent-blue);
+    background: var(--bg-active);
+}
+.app-theme-check {
+    position: absolute; top: 8px; right: 9px;
+    color: var(--accent-blue); font-size: 0.9rem;
+    display: none;
+}
+.app-theme-card.selected .app-theme-check { display: block; }
+
+/* Theme preview thumbnails */
+.app-theme-preview {
+    width: 100%; height: 64px;
+    border-radius: 8px; overflow: hidden;
+    display: flex; border: 1px solid rgba(255,255,255,0.06);
+}
+.app-theme-preview--dark  { background: #0f1117; }
+.app-theme-preview--light { background: #f0f4f8; border-color: rgba(0,0,0,0.08); }
+.app-theme-preview--system { display: flex; border-color: rgba(0,0,0,0.08); }
+
+.atp-half { flex: 1; overflow: hidden; }
+.atp-half--dark  { background: #0f1117; }
+.atp-half--light { background: #f0f4f8; border-left: 1px dashed rgba(0,0,0,0.12); }
+
+.atp-sidebar {
+    width: 30%; background: rgba(255,255,255,0.05);
+    display: flex; flex-direction: column;
+    padding: 8px 5px; gap: 5px;
+}
+.app-theme-preview--light .atp-sidebar { background: rgba(0,0,0,0.06); }
+.atp-sb-line {
+    height: 5px; border-radius: 2px; width: 80%;
+    background: rgba(111,191,255,0.3);
+}
+.atp-sb-line-l {
+    height: 5px; border-radius: 2px; width: 80%;
+    background: rgba(37,99,235,0.3);
+}
+
+.atp-content { flex: 1; padding: 8px 6px; display: flex; flex-direction: column; gap: 5px; }
+.atp-bar {
+    height: 7px; border-radius: 3px;
+    background: rgba(111,191,255,0.4); width: 50%;
+}
+.atp-row {
+    height: 4px; border-radius: 2px; width: 85%;
+    background: rgba(255,255,255,0.1);
+}
+.app-theme-preview--light .atp-row { background: rgba(0,0,0,0.1); }
+
+.app-theme-label {
+    font-size: 0.83rem; font-weight: 600;
+    color: var(--text-secondary);
+    display: flex; align-items: center; gap: 6px;
+}
+.app-theme-card.selected .app-theme-label { color: var(--accent-blue); }
+
+/* ── LANGUAGE GRID ── */
+.app-lang-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.app-lang-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 14px;
+    border: 2px solid var(--border-input);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+}
+.app-lang-card:hover { border-color: var(--accent-blue); background: var(--bg-hover); }
+.app-lang-card.selected {
+    border-color: var(--accent-blue);
+    background: var(--bg-active);
+}
+.app-lang-flag { font-size: 1.3rem; line-height: 1; }
+.app-lang-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); flex: 1; }
+.app-lang-check { color: var(--accent-blue); font-size: 0.8rem; }
+
+/* ── TOGGLE SWITCH ── */
+.app-toggle-item {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 20px; padding: 16px 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.app-toggle-item:last-child { border-bottom: none; padding-bottom: 0; }
+.app-toggle-info { flex: 1; }
+.app-toggle-title {
+    font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 5px;
+}
+.app-toggle-desc {
+    font-size: 0.8rem; color: var(--text-muted); line-height: 1.6;
+}
+.app-toggle-desc strong { color: var(--text-secondary); }
+
+.app-toggle-switch {
+    position: relative; display: inline-block;
+    width: 44px; height: 24px; flex-shrink: 0; margin-top: 2px;
+}
+.app-toggle-switch input { opacity: 0; width: 0; height: 0; }
+.app-toggle-slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: var(--border-input); border-radius: 24px; transition: background 0.2s;
+}
+.app-toggle-slider::before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; border-radius: 50%;
+    left: 3px; top: 3px; background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+}
+.app-toggle-switch input:checked + .app-toggle-slider { background: var(--accent-teal); }
+.app-toggle-switch input:checked + .app-toggle-slider::before { transform: translateX(20px); }
+
+@media (max-width: 600px) {
+    .app-theme-picker { grid-template-columns: 1fr 1fr; }
+    .app-lang-grid    { grid-template-columns: 1fr 1fr; }
+    .app-toggle-item  { flex-direction: column; }
+}
 </style>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   Read the REAL current state from:
+   - Theme  → localStorage (this is the ground truth since the topbar
+               toggle writes directly to localStorage)
+   - Locale → window.SB_LOCALE (set by PHP/Twig from the actual
+               Symfony request locale)
+   ══════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── THEME: read from localStorage (source of truth) ── */
+    var storedTheme = localStorage.getItem('securboxTheme') || 'dark';
+    selectTheme(storedTheme, true);  // true = silent (no re-apply, already applied by base.html)
+
+    /* ── LANGUAGE: read from PHP locale passed via window.SB_LOCALE ── */
+    var locale = window.SB_LOCALE || 'fr';
+    selectLang(locale, true);
+});
+
+/* Select a theme card visually and set the hidden radio */
+function selectTheme(value, silent) {
+    ['dark', 'light', 'system'].forEach(function (t) {
+        var card = document.getElementById('tc_' + t);
+        var radio = document.getElementById('r_' + t);
+        if (card)  card.classList.toggle('selected', t === value);
+        if (radio) radio.checked = (t === value);
+    });
+
+    if (!silent) {
+        /* Live-apply immediately so user sees the change before saving */
+        var resolved = value;
+        if (value === 'system') {
+            resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', resolved);
+        /* Also update topbar icon via base.html function */
+        if (typeof applyTheme === 'function') applyTheme(resolved);
+        /* Persist to localStorage so other pages stay in sync */
+        localStorage.setItem('securboxTheme', value);
+    }
+}
+
+/* Select a language card visually and set the hidden radio */
+function selectLang(value, silent) {
+    ['fr', 'en', 'ar'].forEach(function (l) {
+        var card   = document.getElementById('lc_' + l);
+        var check  = document.getElementById('lcheck_' + l);
+        var radio  = document.getElementById('lang_' + l);
+        if (card)  card.classList.toggle('selected', l === value);
+        if (check) check.style.display = (l === value) ? 'inline' : 'none';
+        if (radio) radio.checked = (l === value);
+    });
+}
+
+/* On form submit: save theme to localStorage so the next page load is correct */
+document.getElementById('appearanceForm').addEventListener('submit', function () {
+    var themeRadio = document.querySelector('input[name="theme"]:checked');
+    if (themeRadio) {
+        localStorage.setItem('securboxTheme', themeRadio.value);
+    }
+});
+</script>
 {% endblock %}

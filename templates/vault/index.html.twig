@@ -111,6 +111,60 @@
     color: var(--text-primary); font-size: 1.2rem; font-weight: 600;
     margin: 0; display: flex; align-items: center; gap: 10px;
 }
+
+/* ── BANNER COLLECTION METADATA ── */
+.collection-info-banner {
+    background: var(--bg-filters);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+.collection-info-main p {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    margin: 8px 0 0 0;
+    line-height: 1.45;
+}
+.collection-info-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+.collection-info-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.btn-collection-action {
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    padding: 6px 12px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.btn-collection-action:hover {
+    background: var(--bg-hover);
+}
+.btn-collection-action.delete {
+    color: var(--accent-danger);
+}
+
 .secrets-table-head {
     display: grid; grid-template-columns: 2fr 1fr 1fr 50px;
     padding: 7px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--border-subtle);
@@ -144,6 +198,78 @@
 .dropdown-trigger-btn { color: var(--text-muted); border: none; background: transparent; cursor: pointer; padding: 4px 10px; font-size: 1rem; }
 .dropdown-trigger-btn:hover { color: var(--text-primary); }
 .dropdown-divider { border-color: var(--border-input) !important; }
+
+@media (max-width: 640px) {
+    .vault-layout {
+        flex-direction: column;
+        min-height: calc(100vh - 58px);
+    }
+
+    .filters-panel {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+        flex-shrink: 0;
+    }
+
+    .filters-header,
+    .filters-search,
+    .filters-section-title,
+    .filters-divider { display: none; }
+
+    .filters-panel > div,
+    .filters-panel > a,
+    #vaultsSection,
+    #itemsSection,
+    #collectionsSection {
+        display: inline-flex !important;
+        flex-direction: row;
+        white-space: nowrap;
+    }
+
+    .filters-item {
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        padding: 10px 14px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .filters-item.active {
+        border-bottom-color: var(--accent-blue);
+        border-left: none;
+        background: transparent;
+    }
+    .filters-item .f-count { display: none; }
+
+    .collection-info-banner {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+    }
+    .collection-info-actions {
+        width: 100%;
+    }
+    .btn-collection-action {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .secrets-panel { padding: 10px 8px 8px; }
+    .secrets-table-head { display: none; }
+    .secret-row {
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        padding: 10px;
+        min-height: 52px;
+    }
+    .secret-type,
+    .secret-date { display: none; }
+}
 </style>
 
 <div class="vault-layout">
@@ -276,13 +402,47 @@
             <span style="color:var(--text-muted); font-size:0.82rem;">{{ secrets|length }} élément(s)</span>
         </div>
 
-        {% if secrets is empty %}
-            <div style="text-align:center; padding:80px 20px; color:var(--text-muted);">
-                <i class="fas fa-box-open fa-3x" style="opacity:0.12; margin-bottom:16px; display:block;"></i>
-                <p style="font-size:0.95rem; margin-bottom:6px;">Aucun secret ici</p>
-                <p style="font-size:0.82rem;">Utilisez le bouton <strong style="color:var(--accent-blue);">+ Nouveau</strong> pour en ajouter un</p>
+        {# ── BANDEAU METADONNÉES DE LA COLLECTION ACTIVE ── #}
+        {% if activeCollection is defined and activeCollection is not null %}
+            <div class="collection-info-banner">
+                <div class="collection-info-main">
+                    <p>{{ activeCollection.description ?: 'Aucune description fournie.' }}</p>
+                    <div class="collection-info-date">
+                        <i class="far fa-calendar-alt"></i>
+                        <span>Créée le : <span style="color: var(--text-primary);">{{ activeCollection.createdAt|date('d/m/Y à H:i') }}</span></span>
+                    </div>
+                </div>
+                <div class="collection-info-actions">
+                    <a href="{{ path('app_collection_edit', {id: activeCollection.id}) }}" class="btn-collection-action">
+                        <i class="fas fa-edit" style="color: var(--accent-blue);"></i> Modifier
+                    </a>
+                    <form method="post" action="{{ path('app_collection_delete', {id: activeCollection.id}) }}"
+                  onsubmit="return confirm('Attention ! Supprimer cette collection supprimera également TOUS les secrets qu\'elle contient de manière définitive. Confirmer ?')" style="margin: 0;">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_collection' ~ activeCollection.id) }}">
+                <button type="submit" class="btn-collection-action delete">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </button>
+                    </form>
+                </div>
             </div>
-        {% else %}
+        {% endif %}
+
+        {% if secrets is empty %}
+    <div style="text-align:center; padding:80px 20px; color:var(--text-muted);">
+        <i class="fas fa-box-open fa-3x" style="opacity:0.12; margin-bottom:16px; display:block;"></i>
+        <p style="font-size:0.95rem; margin-bottom:6px;">Aucun secret ici</p>
+        <p style="font-size:0.82rem; margin-bottom:20px;">Ajoutez votre premier secret dans cette collection</p>
+       <div style="text-align:center; margin-top:16px;">
+    <a href="{{ path('app_vault_new', {'type': 'password', 'collection': app.request.query.get('collection')}) }}"
+       data-modal-url="{{ path('app_vault_new', {'type': 'password', 'modal': '1', 'collection': app.request.query.get('collection')}) }}"
+       data-modal-title="🔑 Nouveau Secret"
+       class="modal-trigger btn-collection-action"
+       style="text-decoration:none; display:inline-flex;">
+        <i class="fas fa-plus" style="color:var(--accent-blue);"></i> Nouveau secret
+    </a>
+</div>
+    </div>
+{% else %}
             <div class="secrets-table-head">
                 <span>Nom</span>
                 <span>Type</span>
@@ -329,17 +489,23 @@
                                    min-width:180px; padding:6px 0;
                                    z-index:1000; border-radius:8px; list-style:none; margin:4px 0 0 0;">
                             <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
-                                   href="{{ path('app_vault_show', {id: secret.id}) }}">
-                                    <i class="fas fa-eye" style="width:15px; color:var(--text-muted);"></i> Afficher
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
-                                   href="{{ path('app_vault_edit', {id: secret.id}) }}">
-                                    <i class="fas fa-edit" style="width:15px; color:var(--text-muted);"></i> Modifier
-                                </a>
-                            </li>
+    <a href="#"
+       data-modal-url="{{ path('app_vault_show', {id: secret.id, modal: 1}) }}"
+       data-modal-title="{{ secret.name }}"
+       class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
+       onclick="event.preventDefault(); event.stopPropagation(); openVaultModal(this.dataset.modalUrl, this.dataset.modalTitle); this.closest('.custom-dropdown-menu').style.display='none';">
+        <i class="fas fa-eye" style="width:15px; color:var(--text-muted);"></i> Afficher
+    </a>
+</li>
+<li>
+    <a href="#"
+       data-modal-url="{{ path('app_vault_edit', {id: secret.id, modal: 1}) }}"
+       data-modal-title="✏️ Modifier — {{ secret.name }}"
+       class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
+       onclick="event.preventDefault(); event.stopPropagation(); openVaultModal(this.dataset.modalUrl, this.dataset.modalTitle); this.closest('.custom-dropdown-menu').style.display='none';">
+        <i class="fas fa-edit" style="width:15px; color:var(--text-muted);"></i> Modifier
+    </a>
+</li>
                             <li>
                                 <form method="post" action="{{ path('app_vault_favorite', {id: secret.id}) }}" style="margin:0;">
                                     <input type="hidden" name="_token" value="{{ csrf_token('favorite' ~ secret.id) }}">
@@ -412,42 +578,66 @@
 
 <script>
 function toggleSection(id, titleEl) {
-    const section = document.getElementById(id);
-    const icon = titleEl.querySelector('i');
-    const isHidden = section.style.display === 'none';
-    section.style.display = isHidden ? 'block' : 'none';
-    titleEl.classList.toggle('collapsed', !isHidden);
+  var section = document.getElementById(id);
+  var isHidden = section.style.display === 'none';
+  section.style.display = isHidden ? 'block' : 'none';
+  titleEl.classList.toggle('collapsed', !isHidden);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.custom-dropdown-trigger').forEach(trigger => {
-        trigger.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const menu = this.nextElementSibling;
-            document.querySelectorAll('.custom-dropdown-menu').forEach(m => {
-                if (m !== menu) m.style.display = 'none';
-            });
-            menu.style.display = (!menu.style.display || menu.style.display === 'none') ? 'block' : 'none';
-        });
+
+  /* ── Dropdown menus ── */
+  document.querySelectorAll('.custom-dropdown-trigger').forEach(function(trigger) {
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var menu = this.nextElementSibling;
+      document.querySelectorAll('.custom-dropdown-menu').forEach(function(m) {
+        if (m !== menu) m.style.display = 'none';
+      });
+      menu.style.display = (!menu.style.display || menu.style.display === 'none') ? 'block' : 'none';
     });
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.style.display = 'none');
+  });
+
+  /* Ferme les menus si on clique ailleurs — mais pas sur un élément du menu */
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.custom-dropdown-menu')) return;
+    document.querySelectorAll('.custom-dropdown-menu').forEach(function(m) {
+      m.style.display = 'none';
     });
+  });
+
 });
 
+/* ── Search ── */
 document.getElementById('searchInput')?.addEventListener('input', function() {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('.secret-row').forEach(row => {
-        row.style.display = row.dataset.name.includes(q) ? 'grid' : 'none';
-    });
+  var q = this.value.toLowerCase();
+  document.querySelectorAll('.secret-row').forEach(function(row) {
+    row.style.display = row.dataset.name.includes(q) ? 'grid' : 'none';
+  });
 });
 
+/* ── Row click → open vault modal ── */
 document.addEventListener('click', function(e) {
-    const row = e.target.closest('.secret-row');
-    if (!row) return;
-    if (e.target.closest('.custom-dropdown-trigger') || e.target.closest('.custom-dropdown-menu') || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
-    const url = row.dataset.url;
-    if (url) openVaultModal(url, row.dataset.name);
+  var row = e.target.closest('.secret-row');
+  if (!row) return;
+  if (
+    e.target.closest('.custom-dropdown-trigger') ||
+    e.target.closest('.custom-dropdown-menu') ||
+    e.target.tagName === 'BUTTON' ||
+    e.target.tagName === 'A'
+  ) return;
+
+  var url = row.dataset.url;
+  var name = row.dataset.name;
+  if (!url) return;
+
+  window._spSourceUrl = url;
+  window._modalSourceUrl = url;
+
+  if (typeof openVaultModal === 'function') {
+    openVaultModal(url, name);
+  }
 });
 </script>
+
 {% endblock %}

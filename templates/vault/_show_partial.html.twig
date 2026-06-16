@@ -1,168 +1,357 @@
-{# Partial used for modal display / AJAX fetch #}
-<div style="background:#161b27; border:1px solid #2a2f3e; border-radius:12px; padding:24px; max-width:720px;">
+{#
+  _show_partial.html.twig — inner body only, loaded via AJAX
+  Attachments are served via app_vault_attachment route (no base64).
+#}
+<style>
+  .sp-wrap { display: flex; flex-direction: column; gap: 0; }
+  .sp-vault-locked { text-align: center; padding: 32px 20px; }
+  .sp-vault-locked h3 { color: var(--text-primary, #e0e0e0); font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+  .sp-vault-locked p  { color: var(--text-secondary, #9ca3af); font-size: 0.88rem; margin-bottom: 20px; }
+  .sp-header { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--border-subtle, #1f2937); }
+  .sp-type-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+  .sp-type-icon.password { background: var(--bg-active, #1e3a5f); color: var(--accent-blue, #6fbfff); }
+  .sp-type-icon.api_key  { background: #1a3a2a; color: var(--accent-teal, #4dd4ac); }
+  .sp-type-icon.note     { background: #3a2e10; color: var(--accent-warn, #fbbf24); }
+  .sp-type-icon.identity { background: #2a1a3a; color: var(--accent-purple, #c084fc); }
+  .sp-header-meta { flex: 1; min-width: 0; }
+  .sp-secret-name { color: var(--text-primary, #e0e0e0); font-size: 1.05rem; font-weight: 600; margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sp-secret-type { font-size: 0.75rem; color: var(--text-muted, #4b5563); text-transform: uppercase; letter-spacing: 0.05em; }
+  .sp-favorite { color: var(--accent-warn, #fbbf24); font-size: 0.75rem; margin-left: 6px; }
+  .sp-fields { display: flex; flex-direction: column; gap: 10px; }
+  .sp-field { background: var(--bg-card, #141b27); border: 1px solid var(--border-main, #252d3d); border-radius: 10px; padding: 12px 16px; position: relative; }
+  .sp-field-label { font-size: 0.71rem; color: var(--text-muted, #4b5563); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .sp-field-value { color: var(--text-primary, #e0e0e0); font-size: 0.92rem; word-break: break-all; line-height: 1.5; }
+  .sp-field-value a { color: var(--accent-blue, #6fbfff); text-decoration: none; }
+  .sp-field-value a:hover { text-decoration: underline; }
+  .sp-pwd-display { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .sp-pwd-text { font-family: 'Courier New', monospace; font-size: 0.95rem; letter-spacing: 0.05em; flex: 1; min-width: 0; word-break: break-all; }
+  .sp-pwd-masked { letter-spacing: 0.12em; }
+  .sp-field-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .sp-action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-input, #2a2f3e); background: var(--bg-input, #1e2535); color: var(--text-muted, #4b5563); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: all 0.15s; flex-shrink: 0; text-decoration: none; }
+  .sp-action-btn:hover { color: var(--accent-blue, #6fbfff); border-color: var(--accent-blue, #6fbfff); }
+  .sp-action-btn.copied { color: var(--accent-teal, #4dd4ac); border-color: var(--accent-teal, #4dd4ac); }
+  .sp-field-value.note-text { background: var(--bg-body, #0f1117); border-radius: 7px; padding: 10px 12px; white-space: pre-wrap; font-size: 0.88rem; line-height: 1.6; margin-top: 2px; border: 1px solid var(--border-input, #2a2f3e); max-height: 200px; overflow-y: auto; }
+  .sp-identity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sp-custom-field { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border-subtle, #1f2937); }
+  .sp-custom-field:last-child { border-bottom: none; }
+  .sp-custom-key { font-size: 0.8rem; color: var(--text-muted, #4b5563); min-width: 90px; flex-shrink: 0; padding-top: 1px; }
+  .sp-custom-val { font-size: 0.88rem; color: var(--text-primary, #e0e0e0); text-align: right; word-break: break-all; flex: 1; }
+  .sp-section-title { font-size: 0.7rem; color: var(--text-muted, #4b5563); text-transform: uppercase; letter-spacing: 0.08em; margin: 6px 0 4px; padding-left: 2px; }
+  .sp-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border-subtle, #1f2937); }
+  .sp-footer-meta { color: var(--text-muted, #4b5563); font-size: 0.75rem; display: flex; align-items: center; gap: 5px; }
+  .sp-footer-actions { display: flex; gap: 8px; }
+  .sp-link-btn { font-size: 0.83rem; color: var(--accent-blue, #6fbfff); text-decoration: none; display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-input, #2a2f3e); transition: all 0.15s; }
+  .sp-link-btn:hover { background: var(--bg-hover, #1e2535); border-color: var(--accent-blue, #6fbfff); }
+  .sp-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--accent-teal, #4dd4ac); color: #0f1117; font-size: 0.85rem; font-weight: 600; padding: 10px 20px; border-radius: 20px; display: none; z-index: 99999; box-shadow: 0 4px 20px rgba(77,212,172,0.3); white-space: nowrap; }
+  .sp-protected { -webkit-user-select: none !important; -webkit-touch-callout: none !important; user-select: none !important; }
+  @media (max-width: 540px) { .sp-identity-grid { grid-template-columns: 1fr; } }
+</style>
 
-    {% for message in app.flashes('success') %}
-        <div style="background:#0f3723; border:1px solid #124e2c; border-radius:8px; padding:12px 14px; margin-bottom:16px; color:#8dd7a4;">
-            <i class="fas fa-check-circle me-2"></i>{{ message }}
+<div class="sp-wrap" id="spWrap">
+
+{% if vaultLocked %}
+  <div class="sp-vault-locked">
+    <div style="width:64px; height:64px; background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px; font-size:1.8rem; color:var(--accent-danger,#f87171);">
+      <i class="fas fa-lock"></i>
+    </div>
+    <h3>Coffre verrouillé</h3>
+    <p>Votre session a expiré ou le coffre a été verrouillé.<br>Reconnectez-vous pour accéder à vos secrets.</p>
+    <a href="{{ path('app_login') }}" style="display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,var(--accent-blue,#6fbfff),var(--accent-teal,#4dd4ac)); color:#0f1117; font-weight:700; font-size:0.9rem; padding:10px 24px; border-radius:10px; text-decoration:none;">
+      <i class="fas fa-sign-in-alt"></i> Se reconnecter
+    </a>
+    <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border-subtle,#1f2937);">
+      <div class="sp-footer-meta" style="justify-content:center;"><i class="fas fa-clock"></i> Créé le {{ secret.createdAt|date('d/m/Y à H:i') }}</div>
+    </div>
+  </div>
+
+{% elseif decryptedPayload is not null %}
+
+  {# Header #}
+  <div class="sp-header">
+    <div class="sp-type-icon {{ secret.type }}">
+      {% if secret.type == 'password' %}<i class="fas fa-key"></i>
+      {% elseif secret.type == 'api_key' %}<i class="fas fa-code"></i>
+      {% elseif secret.type == 'note' %}<i class="fas fa-sticky-note"></i>
+      {% else %}<i class="fas fa-id-card"></i>{% endif %}
+    </div>
+    <div class="sp-header-meta">
+      <div class="sp-secret-name">
+        {{ secret.name }}
+        {% if secret.isFavorite %}<i class="fas fa-star sp-favorite"></i>{% endif %}
+      </div>
+      <div class="sp-secret-type">
+        {% if secret.type == 'password' %}Mot de passe
+        {% elseif secret.type == 'api_key' %}Clé API
+        {% elseif secret.type == 'note' %}Note sécurisée
+        {% else %}Identité{% endif %}
+        {% if secret.collection %}&nbsp;·&nbsp; <i class="fas fa-layer-group" style="font-size:0.65rem;"></i> {{ secret.collection.name }}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="sp-fields sp-protected">
+
+    {# ── PASSWORD ── #}
+    {% if secret.type == 'password' %}
+      {% if decryptedPayload.website is defined and decryptedPayload.website %}
+        <div class="sp-field">
+          <div class="sp-field-label"><i class="fas fa-globe"></i> Site web</div>
+          <div class="sp-field-value sp-pwd-display">
+            <a href="{{ decryptedPayload.website }}" target="_blank" rel="noopener noreferrer">{{ decryptedPayload.website }}</a>
+            <div class="sp-field-actions">
+              <button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.website|e('js') }}', this)" title="Copier"><i class="fas fa-copy"></i></button>
+              <a href="{{ decryptedPayload.website }}" target="_blank" rel="noopener noreferrer" class="sp-action-btn" title="Ouvrir"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+          </div>
         </div>
-    {% endfor %}
-    {% for message in app.flashes('error') %}
-        <div style="background:#3b1d1d; border:1px solid #7f1d1d; border-radius:8px; padding:12px 14px; margin-bottom:16px; color:#fca5a5;">
-            <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+      {% endif %}
+      {% set usernameVal = decryptedPayload.username is defined ? decryptedPayload.username : (decryptedPayload.login is defined ? decryptedPayload.login : null) %}
+      {% if usernameVal %}
+        <div class="sp-field">
+          <div class="sp-field-label"><i class="fas fa-user"></i> Nom d'utilisateur</div>
+          <div class="sp-field-value sp-pwd-display">
+            <span>{{ usernameVal }}</span>
+            <div class="sp-field-actions">
+              <button class="sp-action-btn" onclick="spCopy('{{ usernameVal|e('js') }}', this)" title="Copier"><i class="fas fa-copy"></i></button>
+            </div>
+          </div>
         </div>
-    {% endfor %}
-
-    {% if decryptedData is null %}
-        <div style="background:#1e2535; border:1px solid #6fbfff; border-radius:8px;
-                    padding:14px 16px; margin-bottom:18px; color:#6fbfff; font-size:0.9rem;">
-            <i class="fas fa-info-circle me-2"></i>
-            Entrez votre mot de passe maître pour déchiffrer ce secret.
+      {% endif %}
+      {% if decryptedPayload.password is defined and decryptedPayload.password %}
+        <div class="sp-field">
+          <div class="sp-field-label"><i class="fas fa-lock"></i> Mot de passe</div>
+          <div class="sp-pwd-display">
+            <span class="sp-pwd-text sp-pwd-masked" id="spPwdText" data-real="{{ decryptedPayload.password|e('html_attr') }}">●●●●●●●●●●●●</span>
+            <div class="sp-field-actions">
+              <button class="sp-action-btn" onclick="spTogglePwd()" title="Afficher / Masquer"><i class="fas fa-eye" id="spPwdEyeIcon"></i></button>
+              <button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.password|e('js') }}', this)" title="Copier"><i class="fas fa-copy"></i></button>
+            </div>
+          </div>
         </div>
-        <form method="post" id="modalMasterForm">
-            <div class="mb-3">
-                <label class="form-label" style="color:#f87171;">
-                    <i class="fas fa-key me-1"></i>Mot de passe maître
-                </label>
-                <input type="password" name="master_password" class="form-control"
-                       placeholder="Votre mot de passe maître" required autofocus>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <button type="submit" class="btn btn-primary px-4 py-2">
-                    <i class="fas fa-unlock me-2"></i>Déchiffrer
-                </button>
-                <button type="button" class="btn btn-outline-secondary px-3" onclick="closeItemModal()">Annuler</button>
-            </div>
-        </form>
-    {% else %}
-        {% if decryptedPayload is not null %}
-            <div style="display:grid; gap:18px; margin-bottom:18px;">
-                {% if decryptedPayload.website is defined and decryptedPayload.website %}
-                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
-                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
-                            <i class="fas fa-link me-1"></i>Site web
-                        </div>
-                        <a href="{{ decryptedPayload.website }}" target="_blank" rel="noopener noreferrer"
-                           style="color:#e0e0e0; text-decoration:none; word-break:break-all;">{{ decryptedPayload.website }}</a>
-                    </div>
-                {% endif %}
+      {% endif %}
 
-                {% if decryptedPayload.login is defined and decryptedPayload.login %}
-                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
-                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
-                            <i class="fas fa-user me-1"></i>Login
-                        </div>
-                        <div style="color:#e0e0e0; font-size:0.95rem; word-break:break-all;">{{ decryptedPayload.login }}</div>
-                    </div>
-                {% endif %}
-
-                {% if decryptedPayload.password is defined and decryptedPayload.password %}
-                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
-                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
-                            <i class="fas fa-lock me-1"></i>Mot de passe
-                        </div>
-                        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
-                            <div style="color:#e0e0e0; font-size:0.95rem; word-break:break-all;">{{ decryptedPayload.password }}</div>
-                            <button type="button" onclick="copyToClipboard('{{ decryptedPayload.password|e('js') }}')"
-                                    style="background:#1e2535; color:#6fbfff; border:1px solid #2a2f3e;
-                                           padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.88rem;">
-                                <i class="fas fa-clone me-1"></i>Copier
-                            </button>
-                        </div>
-                    </div>
-                {% endif %}
-
-                {% if decryptedPayload is not null and ((decryptedPayload.note is defined and decryptedPayload.note) or (decryptedPayload.notes is defined and decryptedPayload.notes)) %}
-                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
-                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:8px;">
-                            <i class="fas fa-sticky-note me-1"></i>Notes
-                        </div>
-                        <div style="color:#e0e0e0; font-size:0.95rem; white-space:pre-wrap;">{{ decryptedPayload.note is defined and decryptedPayload.note ? decryptedPayload.note : decryptedPayload.notes }}</div>
-                    </div>
-                {% endif %}
-
-                {% if decryptedPayload is not null and decryptedPayload.attachments is defined and decryptedPayload.attachments is not empty %}
-                    <div style="background:#111827; border:1px solid #2a2f3e; border-radius:10px; padding:18px;">
-                        <div style="color:#9ca3af; font-size:0.8rem; margin-bottom:12px;">
-                            <i class="fas fa-paperclip me-1"></i>Pièces jointes
-                        </div>
-                        <div style="display:grid; gap:14px;">
-                            {% for attachment in decryptedPayload.attachments %}
-                                <div style="background:#161b27; border:1px solid #25304a; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                                        <div>
-                                            <div style="color:#e0e0e0; font-weight:600;">{{ attachment.name }}</div>
-                                            <div style="color:#9ca3af; font-size:0.82rem;">{{ attachment.type }} · {{ attachment.size }}</div>
-                                        </div>
-                                        <a href="{{ attachment.data }}" download="{{ attachment.name }}"
-                                           style="background:#0f172a; color:#6fbfff; border:1px solid #2a2f3e; padding:8px 14px; border-radius:8px; text-decoration:none; font-size:0.88rem;">
-                                            <i class="fas fa-download me-1"></i>Télécharger
-                                        </a>
-                                    </div>
-                                    {% if attachment.type starts with 'image/' %}
-                                        <img src="{{ attachment.data }}" alt="{{ attachment.name }}" style="max-width:100%; border-radius:8px;" />
-                                    {% elseif attachment.type starts with 'video/' %}
-                                        <video controls style="max-width:100%; border-radius:8px;">
-                                            <source src="{{ attachment.data }}" type="{{ attachment.type }}">
-                                            Votre navigateur ne supporte pas la lecture vidéo.
-                                        </video>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endif %}
-
-                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-                    <button onclick="copyToClipboard('{{ decryptedData|e('js') }}')"
-                            style="background:#1e2535; color:#6fbfff; border:1px solid #2a2f3e;
-                                   padding:10px 18px; border-radius:8px; cursor:pointer; font-size:0.88rem;">
-                        <i class="fas fa-copy me-2"></i>Copier tout
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary px-3" onclick="closeItemModal()">Fermer</button>
-                </div>
+    {# ── API KEY ── #}
+    {% elseif secret.type == 'api_key' %}
+      {% if decryptedPayload.service is defined and decryptedPayload.service %}
+        <div class="sp-field">
+          <div class="sp-field-label"><i class="fas fa-server"></i> Service</div>
+          <div class="sp-field-value">{{ decryptedPayload.service }}</div>
+        </div>
+      {% endif %}
+      {% if decryptedPayload.key is defined and decryptedPayload.key %}
+        <div class="sp-field">
+          <div class="sp-field-label"><i class="fas fa-key"></i> Clé API</div>
+          <div class="sp-pwd-display">
+            <span class="sp-pwd-text sp-pwd-masked" id="spApiText" data-real="{{ decryptedPayload.key|e('html_attr') }}">●●●●●●●●●●●●●●●●●●●●</span>
+            <div class="sp-field-actions">
+              <button class="sp-action-btn" onclick="spToggleApi()" title="Afficher / Masquer"><i class="fas fa-eye" id="spApiEyeIcon"></i></button>
+              <button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.key|e('js') }}', this)" title="Copier"><i class="fas fa-copy"></i></button>
             </div>
-        {% else %}
-            <div style="background:#1a3a2a; border:1px solid #4dd4ac; border-radius:8px; padding:20px; margin-bottom:18px;">
-                <div style="color:#4dd4ac; font-size:0.8rem; text-transform:uppercase;
-                            letter-spacing:1px; margin-bottom:10px;">
-                    <i class="fas fa-unlock me-2"></i>Données déchiffrées
-                </div>
-                <pre id="modalDecrypted" style="color:#e0e0e0; margin:0; white-space:pre-wrap; font-size:0.95rem;">{{ decryptedData }}</pre>
+          </div>
+        </div>
+      {% endif %}
+      {% if decryptedPayload.base_url is defined and decryptedPayload.base_url %}
+        <div class="sp-field">
+          <div class="sp-field-label"><i class="fas fa-link"></i> URL de base</div>
+          <div class="sp-field-value sp-pwd-display">
+            <a href="{{ decryptedPayload.base_url }}" target="_blank">{{ decryptedPayload.base_url }}</a>
+            <div class="sp-field-actions">
+              <button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.base_url|e('js') }}', this)" title="Copier"><i class="fas fa-copy"></i></button>
             </div>
-            <div style="display:flex; gap:12px; align-items:center;">
-                <button onclick="copyToClipboard(document.getElementById('modalDecrypted').innerText)"
-                        style="background:#1e2535; color:#6fbfff; border:1px solid #2a2f3e;
-                               padding:8px 18px; border-radius:6px; cursor:pointer; font-size:0.88rem;">
-                    <i class="fas fa-copy me-2"></i>Copier
-                </button>
-                <button type="button" class="btn btn-outline-secondary px-3" onclick="closeItemModal()">Fermer</button>
-            </div>
+          </div>
+        </div>
+      {% endif %}
+      {% if decryptedPayload.env is defined and decryptedPayload.env %}
+        <div class="sp-field">
+          <div class="sp-field-label"><i class="fas fa-tag"></i> Environnement</div>
+          <div class="sp-field-value">{{ decryptedPayload.env }}</div>
+        </div>
+      {% endif %}
+
+    {# ── IDENTITY ── #}
+    {% elseif secret.type == 'identity' %}
+      <div class="sp-identity-grid">
+        {% if decryptedPayload.firstname is defined and decryptedPayload.firstname %}
+          <div class="sp-field"><div class="sp-field-label"><i class="fas fa-user"></i> Prénom</div><div class="sp-field-value sp-pwd-display"><span>{{ decryptedPayload.firstname }}</span><div class="sp-field-actions"><button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.firstname|e('js') }}', this)"><i class="fas fa-copy"></i></button></div></div></div>
         {% endif %}
+        {% if decryptedPayload.lastname is defined and decryptedPayload.lastname %}
+          <div class="sp-field"><div class="sp-field-label"><i class="fas fa-user"></i> Nom</div><div class="sp-field-value sp-pwd-display"><span>{{ decryptedPayload.lastname }}</span><div class="sp-field-actions"><button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.lastname|e('js') }}', this)"><i class="fas fa-copy"></i></button></div></div></div>
+        {% endif %}
+        {% if decryptedPayload.email is defined and decryptedPayload.email %}
+          <div class="sp-field"><div class="sp-field-label"><i class="fas fa-envelope"></i> Email</div><div class="sp-field-value sp-pwd-display"><span>{{ decryptedPayload.email }}</span><div class="sp-field-actions"><button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.email|e('js') }}', this)"><i class="fas fa-copy"></i></button></div></div></div>
+        {% endif %}
+        {% if decryptedPayload.phone is defined and decryptedPayload.phone %}
+          <div class="sp-field"><div class="sp-field-label"><i class="fas fa-phone"></i> Téléphone</div><div class="sp-field-value sp-pwd-display"><span>{{ decryptedPayload.phone }}</span><div class="sp-field-actions"><button class="sp-action-btn" onclick="spCopy('{{ decryptedPayload.phone|e('js') }}', this)"><i class="fas fa-copy"></i></button></div></div></div>
+        {% endif %}
+        {% if decryptedPayload.company is defined and decryptedPayload.company %}
+          <div class="sp-field"><div class="sp-field-label"><i class="fas fa-building"></i> Entreprise</div><div class="sp-field-value">{{ decryptedPayload.company }}</div></div>
+        {% endif %}
+        {% if decryptedPayload.city is defined and decryptedPayload.city %}
+          <div class="sp-field"><div class="sp-field-label"><i class="fas fa-map-marker-alt"></i> Ville</div><div class="sp-field-value">{{ decryptedPayload.city }}</div></div>
+        {% endif %}
+        {% if decryptedPayload.country is defined and decryptedPayload.country %}
+          <div class="sp-field"><div class="sp-field-label"><i class="fas fa-flag"></i> Pays</div><div class="sp-field-value">{{ decryptedPayload.country }}</div></div>
+        {% endif %}
+        {% if decryptedPayload.address is defined and decryptedPayload.address %}
+          <div class="sp-field" style="grid-column: 1 / -1;"><div class="sp-field-label"><i class="fas fa-map"></i> Adresse</div><div class="sp-field-value">{{ decryptedPayload.address }}</div></div>
+        {% endif %}
+      </div>
+
+    {# ── NOTE ── #}
+    {% elseif secret.type == 'note' %}
+      {% set noteContent = decryptedPayload.content is defined ? decryptedPayload.content : (decryptedPayload.note is defined ? decryptedPayload.note : decryptedData) %}
+      <div class="sp-field">
+        <div class="sp-field-label"><i class="fas fa-sticky-note"></i> Contenu</div>
+        <div class="sp-field-value note-text">{{ noteContent }}</div>
+        <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+          <button class="sp-action-btn" style="width:auto; padding:6px 14px; gap:6px; display:flex; align-items:center;" onclick="spCopy('{{ noteContent|e('js') }}', this)">
+            <i class="fas fa-copy"></i> <span style="font-size:0.8rem;">Copier</span>
+          </button>
+        </div>
+      </div>
+
+    {# ── FALLBACK ── #}
+    {% else %}
+      <div class="sp-field">
+        <div class="sp-field-label"><i class="fas fa-database"></i> Données déchiffrées</div>
+        <div class="sp-field-value note-text">{{ decryptedData }}</div>
+      </div>
     {% endif %}
 
-    <hr style="border-color:#2a2f3e; margin:18px 0;">
-    <div style="color:#4b5563; font-size:0.8rem;">
-        <i class="fas fa-clock me-1"></i>Créé le {{ secret.createdAt|date('d/m/Y à H:i') }}
+    {# Notes (tous types) #}
+    {% if decryptedPayload.notes is defined and decryptedPayload.notes %}
+      <p class="sp-section-title">Notes</p>
+      <div class="sp-field">
+        <div class="sp-field-label"><i class="fas fa-comment-alt"></i> Remarques</div>
+        <div class="sp-field-value note-text">{{ decryptedPayload.notes }}</div>
+      </div>
+    {% endif %}
+
+    {# Champs personnalisés #}
+    {% if decryptedPayload.custom_fields is defined and decryptedPayload.custom_fields is not empty %}
+      <p class="sp-section-title">Champs personnalisés</p>
+      <div class="sp-field">
+        {% for field in decryptedPayload.custom_fields %}
+          <div class="sp-custom-field">
+            <span class="sp-custom-key">{{ field.key }}</span>
+            <span class="sp-custom-val">
+              {{ field.value }}
+              <button class="sp-action-btn" style="display:inline-flex; width:26px; height:26px; margin-left:6px; vertical-align:middle;" onclick="spCopy('{{ field.value|e('js') }}', this)"><i class="fas fa-copy"></i></button>
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {# ── Pièces jointes — route sécurisée, pas de base64 ── #}
+    {% if decryptedPayload.attachments is defined and decryptedPayload.attachments is not empty %}
+      <p class="sp-section-title">Pièces jointes</p>
+      {% for att in decryptedPayload.attachments %}
+        {% set attUrl = path('app_vault_attachment', {id: secret.id, filename: att.stored_name}) %}
+        <div class="sp-field" style="padding: 14px 16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:38px; height:38px; border-radius:8px; background:var(--bg-input,#1e2535); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:var(--text-muted,#4b5563); flex-shrink:0;">
+              {% if att.mime starts with 'image/' %}<i class="fas fa-file-image" style="color:var(--accent-warn,#fbbf24);"></i>
+              {% elseif 'pdf' in att.mime %}<i class="fas fa-file-pdf" style="color:var(--accent-danger,#f87171);"></i>
+              {% elseif 'video' in att.mime %}<i class="fas fa-file-video" style="color:#a78bfa;"></i>
+              {% else %}<i class="fas fa-file-alt" style="color:var(--accent-blue,#6fbfff);"></i>{% endif %}
+            </div>
+            <div style="flex:1; min-width:0;">
+              <div style="color:var(--text-primary,#e0e0e0); font-size:0.88rem; font-weight:500;">{{ att.original_name }}</div>
+              <div style="color:var(--text-muted,#4b5563); font-size:0.75rem;">
+                {{ att.mime }}{% if att.size is defined %} · {{ (att.size / 1024)|round(1) }} Ko{% endif %}
+              </div>
+            </div>
+            <a href="{{ attUrl }}" download="{{ att.original_name }}" class="sp-action-btn" style="width:auto; padding:6px 12px; display:flex; align-items:center; gap:5px;" title="Télécharger">
+              <i class="fas fa-download"></i> <span style="font-size:0.78rem;">DL</span>
+            </a>
+          </div>
+          {# Preview inline #}
+          {% if att.mime starts with 'image/' %}
+            <img src="{{ attUrl }}" alt="{{ att.original_name }}" style="width:100%; max-height:200px; object-fit:contain; border-radius:7px; margin-top:12px;">
+          {% elseif 'pdf' in att.mime %}
+            <div style="height:220px; margin-top:12px; border-radius:7px; overflow:hidden;">
+              <object data="{{ attUrl }}" type="application/pdf" width="100%" height="100%">
+                <p style="color:#9ca3af; font-size:0.85rem; padding:10px;">Aperçu non disponible. <a href="{{ attUrl }}" download style="color:#6fbfff;">Télécharger</a>.</p>
+              </object>
+            </div>
+          {% elseif 'video' in att.mime %}
+            <video controls style="width:100%; max-height:220px; border-radius:7px; margin-top:12px;">
+              <source src="{{ attUrl }}" type="{{ att.mime }}">
+            </video>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+  </div>{# /sp-fields #}
+
+  {# Footer #}
+  <div class="sp-footer">
+    <div class="sp-footer-meta">
+      <i class="fas fa-clock"></i>
+      Créé le {{ secret.createdAt|date('d/m/Y à H:i') }}
+      {% if secret.updatedAt %}&nbsp;·&nbsp; Modifié le {{ secret.updatedAt|date('d/m/Y') }}{% endif %}
     </div>
-</div>
+    <div class="sp-footer-actions">
+      <a href="{{ path('app_vault_edit', {id: secret.id, modal: 1}) }}"
+         data-modal-url="{{ path('app_vault_edit', {id: secret.id, modal: 1}) }}"
+         data-modal-title="✏️ Modifier le secret"
+         class="sp-link-btn modal-trigger"
+         onclick="closeVaultModal()">
+        <i class="fas fa-pen"></i> Modifier
+      </a>
+    </div>
+  </div>
+
+{% else %}
+  {# Fallback raw #}
+  <div style="background:rgba(77,212,172,0.08); border:1px solid var(--accent-teal,#4dd4ac); border-radius:8px; padding:20px; margin-bottom:18px;">
+    <div style="color:var(--accent-teal,#4dd4ac); font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;"><i class="fas fa-unlock me-2"></i>Données déchiffrées</div>
+    <pre id="modalDecrypted" style="color:var(--text-primary,#e0e0e0); margin:0; white-space:pre-wrap; font-size:0.95rem;">{{ decryptedData }}</pre>
+  </div>
+  <button onclick="spCopy(document.getElementById('modalDecrypted').innerText, this)" class="sp-action-btn" style="width:auto; padding:8px 18px; gap:6px; display:inline-flex; align-items:center;"><i class="fas fa-copy"></i> Copier</button>
+  <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border-subtle,#1f2937);">
+    <div class="sp-footer-meta"><i class="fas fa-clock"></i> Créé le {{ secret.createdAt|date('d/m/Y à H:i') }}</div>
+  </div>
+{% endif %}
+
+</div>{# /sp-wrap #}
+
+<div class="sp-toast" id="spToast"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Copié !</div>
 
 <script>
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert('Copié dans le presse-papier !');
+(function() {
+  window.spCopy = function(text, btn) {
+    navigator.clipboard.writeText(text).then(function() {
+      if (btn) {
+        btn.classList.add('copied');
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(function() { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+      }
+      var toast = document.getElementById('spToast');
+      if (toast) { toast.style.display = 'block'; setTimeout(function() { toast.style.display = 'none'; }, 2000); }
     });
+  };
+  window.spTogglePwd = function() {
+    var el = document.getElementById('spPwdText'), ico = document.getElementById('spPwdEyeIcon');
+    if (!el) return;
+    if (el.classList.contains('sp-pwd-masked')) { el.textContent = el.dataset.real; el.classList.remove('sp-pwd-masked'); if (ico) ico.className = 'fas fa-eye-slash'; }
+    else { el.textContent = '●●●●●●●●●●●●'; el.classList.add('sp-pwd-masked'); if (ico) ico.className = 'fas fa-eye'; }
+  };
+  window.spToggleApi = function() {
+    var el = document.getElementById('spApiText'), ico = document.getElementById('spApiEyeIcon');
+    if (!el) return;
+    if (el.classList.contains('sp-pwd-masked')) { el.textContent = el.dataset.real; el.classList.remove('sp-pwd-masked'); if (ico) ico.className = 'fas fa-eye-slash'; }
+    else { el.textContent = '●●●●●●●●●●●●●●●●●●●●'; el.classList.add('sp-pwd-masked'); if (ico) ico.className = 'fas fa-eye'; }
+  };
+})();
+if (!window.hasVisibilityListener) {
+  window.hasVisibilityListener = true;
+  document.addEventListener('visibilitychange', function() {
+    var target = document.getElementById('spWrap');
+    if (target) { target.style.transition = 'filter 0.1s ease'; target.style.filter = document.hidden ? 'blur(14px)' : 'none'; }
+  });
 }
-
-// If the modal form is submitted, post back to the show route and refresh modal content
-document.getElementById('modalMasterForm')?.addEventListener('submit', function(e){
-    e.preventDefault();
-    const form = this;
-    const action = window._modalSourceUrl || window.location.href;
-    const data = new FormData(form);
-    fetch(action, { method: 'POST', body: data, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(r => r.text()).then(html => {
-            const dialog = document.getElementById('itemModalDialogContent');
-            if (dialog) dialog.innerHTML = html;
-        });
-});
 </script>

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\WebAuthnCredentialRepository;  // ← AJOUTER
+use App\Trait\LogsActionTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,8 +20,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/settings')]
 class SettingsController extends AbstractController
 {
+    use LogsActionTrait;  // ← AJOUTER
+
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private WebAuthnCredentialRepository $webauthnRepo
     ) {
     }
 
@@ -27,13 +32,37 @@ class SettingsController extends AbstractController
     public function index(Request $request, UserPasswordHasherInterface $hasher): Response
     {
         /** @var User $user */
-        /** @var User $user */
         $user = $this->getUser();
 
         if ($request->isMethod('POST')) {
             $action = $request->request->get('action');
+            if ('update_name' === $action) {
 
-            // ── Update email ──────────────────────────────────────────────
+                $newName = trim($request->request->get('new_name', ''));
+
+                if (empty($newName)) {
+
+                    $this->addFlash('error', 'Le nom ne peut pas être vide.');
+
+                } else {
+
+                    $oldName = $user->getName();
+
+                    $user->setName($newName);
+
+                    $this->entityManager->flush();
+
+                    $this->logAction(
+                        $user,
+                        'NAME_CHANGED',
+                        $request,
+                        'Nom modifié : ' . $oldName . ' → ' . $newName
+                    );
+
+                    $this->addFlash('success', 'Nom mis à jour avec succès !');
+                }
+            }
+
             if ('update_email' === $action) {
                 $current  = $request->request->get('current_password');
                 $newEmail = trim($request->request->get('new_email', ''));
@@ -48,42 +77,26 @@ class SettingsController extends AbstractController
                     if ($existing && $existing !== $user) {
                         $this->addFlash('error', 'Cette adresse email est déjà utilisée.');
                     } else {
+                        $oldEmail = $user->getEmail();
                         $user->setEmail($newEmail);
                         $this->entityManager->flush();
+                        // ── LOG ──────────────────────────────────────────
+                        $this->logAction(
+                            $user,
+                            'EMAIL_CHANGED',
+                            $request,
+                            'Email changé : ' . $oldEmail . ' → ' . $newEmail
+                        );
                         $this->addFlash('success', 'Email mis à jour avec succès !');
                     }
                 }
             }
 
-            // ── Change password ───────────────────────────────────────────
-            if ('change_password' === $action) {
-                $current = $request->request->get('current_password');
-                $new     = $request->request->get('new_password');
-                $confirm = $request->request->get('confirm_password');
-
-                if (! $hasher->isPasswordValid($user, $current)) {
-                    $this->addFlash('error', 'Mot de passe actuel incorrect.');
-                } elseif ($new !== $confirm) {
-                    $this->addFlash('error', 'Les nouveaux mots de passe ne correspondent pas.');
-                } elseif (strlen($new) < 8) {
-                    $this->addFlash('error', 'Le mot de passe doit contenir au moins 8 caractères.');
-                } else {
-                    $user->setPassword($hasher->hashPassword($user, $new));
-                    $this->entityManager->flush();
-                    $this->addFlash('success', 'Mot de passe mis à jour avec succès !');
-                }
-            }
-
-            // ── Deauthorize sessions ──────────────────────────────────────
-            // Invalidates all "remember me" tokens for this user.
             if ('deauthorize_sessions' === $action) {
                 $current = $request->request->get('confirm_password');
                 if (! $hasher->isPasswordValid($user, $current)) {
                     $this->addFlash('error', 'Mot de passe incorrect. Déconnexion annulée.');
                 } else {
-                    // Clear remember-me tokens if you store them
-                    // If you use Symfony's token-based remember-me, invalidate here.
-                    // For session-only auth, just invalidate the current session.
                     $request->getSession()->invalidate();
                     $this->addFlash('success', 'Toutes les sessions ont été révoquées.');
 
@@ -91,24 +104,17 @@ class SettingsController extends AbstractController
                 }
             }
 
-            // ── Purge vault ───────────────────────────────────────────────
             if ('purge_vault' === $action) {
                 $current = $request->request->get('confirm_password');
                 if (! $hasher->isPasswordValid($user, $current)) {
                     $this->addFlash('error', 'Mot de passe incorrect. Coffre non vidé.');
                 } else {
-                    // Delete all vault items belonging to this user
                     $conn = $this->entityManager->getConnection();
-                    // Adjust table/column names to match your actual schema
-                    $conn->executeStatement(
-                        'DELETE FROM vault_item WHERE user_id = :uid',
-                        ['uid' => $user->getId()]
-                    );
+                    $conn->executeStatement('DELETE FROM secret WHERE user_id = :uid', ['uid' => $user->getId()]);
                     $this->addFlash('success', 'Coffre-fort vidé avec succès.');
                 }
             }
 
-            // ── Delete account ────────────────────────────────────────────
             if ('delete_account' === $action) {
                 $current = $request->request->get('confirm_password');
                 if (! $hasher->isPasswordValid($user, $current)) {
@@ -123,64 +129,123 @@ class SettingsController extends AbstractController
             }
         }
 
-        return $this->render('settings/index.html.twig', [
-            'user' => $user,
-        ]);
+        return $this->render('settings/index.html.twig', ['user' => $user]);
     }
 
     #[Route('/security', name: 'app_settings_security')]
-    public function security(Request $request, SessionInterface $session): Response
+    public function security(Request $request, SessionInterface $session, UserPasswordHasherInterface $hasher): Response
     {
-        if ($request->isMethod('POST') && 'save_security' === $request->request->get('action')) {
-            $allowedTimeouts = [5, 15, 30, 60];
-            $allowedActions = ['lock', 'logout'];
+        /** @var User $user */
+        $user = $this->getUser();
 
-            $timeout = (int) $request->request->get('session_timeout', 15);
-            $action = $request->request->get('timeout_action', 'lock');
+        if ($request->isMethod('POST')) {
+            $action = $request->request->get('action');
 
-            if (! in_array($timeout, $allowedTimeouts, true) || ! in_array($action, $allowedActions, true)) {
-                $this->addFlash('error', 'Paramètres de session invalides.');
-            } else {
-                $session->set('settings_security_timeout', $timeout);
-                $session->set('settings_security_action', $action);
-                $this->addFlash('success', 'Paramètres de sécurité enregistrés.');
+            if ('save_security' === $action) {
+                $allowedTimeouts = [0, 1, 5, 15, 30, 60, 240];
+                $allowedActions  = ['lock', 'logout'];
+                $timeout         = (int) $request->request->get('session_timeout', 15);
+                $timeoutAction   = $request->request->get('timeout_action', 'lock');
+
+                if (! in_array($timeout, $allowedTimeouts, true) || ! in_array($timeoutAction, $allowedActions, true)) {
+                    $this->addFlash('error', 'Paramètres invalides.');
+                } else {
+                    $session->set('settings_security_timeout', $timeout);
+                    $session->set('settings_security_action', $timeoutAction);
+                    $session->set('vault_last_activity', time());
+                    $this->addFlash('success', 'Paramètres de session enregistrés.');
+                }
+            }
+
+            if ('change_password' === $action) {
+                $current = $request->request->get('current_password', '');
+                $new     = $request->request->get('new_password', '');
+                $confirm = $request->request->get('confirm_new_password', '');
+
+                if (! $hasher->isPasswordValid($user, $current)) {
+                    $this->addFlash('error', 'Mot de passe actuel incorrect.');
+                } elseif (strlen($new) < 8) {
+                    $this->addFlash('error', 'Le nouveau mot de passe doit contenir au moins 8 caractères.');
+                } elseif ($new !== $confirm) {
+                    $this->addFlash('error', 'Les nouveaux mots de passe ne correspondent pas.');
+                } else {
+                    $user->setPassword($hasher->hashPassword($user, $new));
+                    $this->entityManager->flush();
+                    // ── LOG ──────────────────────────────────────────
+                    $this->logAction(
+                        $user,
+                        'PASSWORD_CHANGED',
+                        $request,
+                        'Mot de passe maître modifié'
+                    );
+                    $request->getSession()->invalidate();
+                    $this->addFlash('success', 'Mot de passe maître mis à jour. Veuillez vous reconnecter.');
+
+                    return $this->redirectToRoute('app_login');
+                }
+            }
+
+            if ('revoke_session' === $action) {
+                $sessionDbId = (int) $request->request->get('session_id');
+                $userSession = $this->entityManager
+                    ->getRepository(\App\Entity\UserSession::class)
+                    ->find($sessionDbId);
+
+                if ($userSession && $userSession->getUser() === $user) {
+                    $userSession->revoke();
+                    $this->entityManager->flush();
+                    $this->addFlash('success', 'Session révoquée.');
+                }
+
+                return $this->redirectToRoute('app_settings_security');
             }
         }
 
-        return $this->render('settings/security.html.twig');
+        $currentSessionId = $request->getSession()->getId();
+        $sessions = $this->entityManager
+            ->getRepository(\App\Entity\UserSession::class)
+            ->findActiveByUser($user->getId());
+
+        return $this->render('settings/security.html.twig', [
+            'sessions'         => $sessions,
+            'currentSessionId' => $currentSessionId,
+            'webauthnRepo'     => $this->webauthnRepo,
+        ]);
     }
 
     #[Route('/appearance', name: 'app_settings_appearance')]
     public function appearance(Request $request, SessionInterface $session): Response
     {
         if ($request->isMethod('POST') && 'save_appearance' === $request->request->get('action')) {
-            $allowedThemes = ['system', 'light', 'dark'];
+            $allowedThemes    = ['system', 'light', 'dark'];
             $allowedLanguages = ['fr', 'en', 'ar'];
-
-            $theme = $request->request->get('theme', 'system');
+            $theme    = $request->request->get('theme', 'dark');
             $language = $request->request->get('language', 'fr');
             $showIcons = $request->request->has('show_website_icons');
+            $maskPwd   = $request->request->has('mask_passwords');
 
             if (! in_array($theme, $allowedThemes, true) || ! in_array($language, $allowedLanguages, true)) {
-                $this->addFlash('error', 'Paramètres d’apparence invalides.');
+                $this->addFlash('error', 'Paramètres invalides.');
             } else {
                 $session->set('settings_appearance_theme', $theme);
                 $session->set('settings_appearance_show_icons', $showIcons);
-                $request->getSession()->set('_locale', $language);
-                $this->addFlash('success', 'Paramètres d’apparence enregistrés.');
+                $session->set('settings_appearance_mask_pwd', $maskPwd);
+                $session->set('_locale', $language);
+                $request->setLocale($language);
+                $this->addFlash('success', 'Préférences d\'apparence enregistrées.');
             }
         }
 
         return $this->render('settings/appearance.html.twig');
     }
 
-    // ── Language switcher ─────────────────────────────────────────────────
     #[Route('/language/{lang}', name: 'app_settings_language')]
     public function setLanguage(string $lang, Request $request, SessionInterface $session): Response
     {
         $allowed = ['fr', 'en', 'ar'];
         if (in_array($lang, $allowed, true)) {
             $session->set('_locale', $lang);
+            $request->setLocale($lang);
         }
         $referer = $request->headers->get('referer', $this->generateUrl('app_settings'));
 

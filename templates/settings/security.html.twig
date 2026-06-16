@@ -4,11 +4,11 @@
 
 {% block body %}
 <div class="sb-settings">
+
     <div class="sb-hero">
         <div class="sb-hero__left">
-            <div class="sb-hero__badge">SÉCURITÉ</div>
             <h1 class="sb-hero__title">Sécurité du compte</h1>
-            <p class="sb-hero__sub">Contrôlez le comportement de votre session et protégez vos accès.</p>
+            <p class="sb-hero__sub">Gérez votre mot de passe maître, les sessions et les appareils connectés.</p>
         </div>
     </div>
 
@@ -21,13 +21,36 @@
         {% endfor %}
     {% endfor %}
 
-    <div class="sb-grid">
+    {#  TAB NAV  #}
+    <div class="sec-tabs">
+        <button class="sec-tab active" data-tab="session" onclick="switchTab('session', this)">
+            <i class="fas fa-clock"></i> <span>Session</span>
+        </button>
+        <button class="sec-tab" data-tab="master" onclick="switchTab('master', this)">
+            <i class="fas fa-key"></i> <span>Mot de passe maître</span>
+        </button>
+        <button class="sec-tab" data-tab="twostep" onclick="switchTab('twostep', this)">
+            <i class="fas fa-mobile-alt"></i> <span>Double auth.</span>
+        </button>
+        <button class="sec-tab" data-tab="devices" onclick="switchTab('devices', this)">
+            <i class="fas fa-laptop"></i> <span>Appareils</span>
+        </button>
+        <button class="sec-tab" data-tab="keys" onclick="switchTab('keys', this)">
+            <i class="fas fa-usb"></i> <span>Clés FIDO2</span>
+        </button>
+    </div>
+
+    {#  TAB 1 — Session timeout  #}
+    <div id="tab-session" class="sec-panel active">
         <div class="sb-card">
             <div class="sb-card__header">
-                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-shield-alt"></i></span>
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-clock"></i></span>
                 <div>
-                    <h3>Paramètres de session</h3>
-                    <p class="sb-card__desc">Choisissez la durée d’inactivité avant verrouillage et l’action à appliquer.</p>
+                    <h3>Délai de verrouillage automatique</h3>
+                    <p class="sb-card__desc">
+                        Après ce délai d'inactivité, votre coffre se verrouille et demande votre mot de passe maître
+                        pour y accéder à nouveau — sans vous déconnecter.
+                    </p>
                 </div>
             </div>
 
@@ -35,21 +58,35 @@
                 <input type="hidden" name="action" value="save_security">
 
                 <div class="sb-field">
-                    <label for="session_timeout">Durée avant expiration</label>
+                    <label for="session_timeout">Délai avant verrouillage</label>
                     <select id="session_timeout" name="session_timeout" class="sb-input">
-                        <option value="5" {{ app.session.get('settings_security_timeout', 15) == 5 ? 'selected' : '' }}>5 minutes</option>
-                        <option value="15" {{ app.session.get('settings_security_timeout', 15) == 15 ? 'selected' : '' }}>15 minutes</option>
-                        <option value="30" {{ app.session.get('settings_security_timeout', 15) == 30 ? 'selected' : '' }}>30 minutes</option>
-                        <option value="60" {{ app.session.get('settings_security_timeout', 15) == 60 ? 'selected' : '' }}>60 minutes</option>
+                        <option value="1"   {{ app.session.get('settings_security_timeout', 15) == 1   ? 'selected' : '' }}>1 minute</option>
+                        <option value="5"   {{ app.session.get('settings_security_timeout', 15) == 5   ? 'selected' : '' }}>5 minutes</option>
+                        <option value="15"  {{ app.session.get('settings_security_timeout', 15) == 15  ? 'selected' : '' }}>15 minutes</option>
+                        <option value="30"  {{ app.session.get('settings_security_timeout', 15) == 30  ? 'selected' : '' }}>30 minutes</option>
+                        <option value="60"  {{ app.session.get('settings_security_timeout', 15) == 60  ? 'selected' : '' }}>1 heure</option>
+                        <option value="240" {{ app.session.get('settings_security_timeout', 15) == 240 ? 'selected' : '' }}>4 heures</option>
+                        <option value="0"   {{ app.session.get('settings_security_timeout', 15) == 0   ? 'selected' : '' }}>Jamais</option>
                     </select>
                 </div>
 
                 <div class="sb-field">
-                    <label for="timeout_action">Action après expiration</label>
+                    <label for="timeout_action">Action après le délai</label>
                     <select id="timeout_action" name="timeout_action" class="sb-input">
-                        <option value="lock" {{ app.session.get('settings_security_action', 'lock') == 'lock' ? 'selected' : '' }}>Verrouiller</option>
-                        <option value="logout" {{ app.session.get('settings_security_action', 'lock') == 'logout' ? 'selected' : '' }}>Déconnecter</option>
+                        <option value="lock"   {{ app.session.get('settings_security_action', 'lock') == 'lock'   ? 'selected' : '' }}>
+                            Verrouiller (redemander le mot de passe maître)
+                        </option>
+                        <option value="logout" {{ app.session.get('settings_security_action', 'lock') == 'logout' ? 'selected' : '' }}>
+                            Déconnecter complètement
+                        </option>
                     </select>
+                </div>
+
+                <div class="sec-action-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="actionInfoText">
+                        Mode Verrouiller : votre session reste active mais le coffre sera masqué. Vous devrez resaisir votre mot de passe maître pour y accéder.
+                    </span>
                 </div>
 
                 <button type="submit" class="sb-btn sb-btn--primary">
@@ -58,51 +95,721 @@
             </form>
         </div>
 
-        <div class="sb-card sb-card--danger">
+        <div class="sec-tip-card">
+            <div class="sec-tip-icon"><i class="fas fa-shield-alt"></i></div>
+            <div>
+                <div class="sec-tip-title">Comment ça fonctionne ?</div>
+                <div class="sec-tip-text">
+                    Dès que vous n'interagissez plus avec l'application pendant le délai choisi, un écran de verrouillage apparaît automatiquement. Votre session reste ouverte, seul votre mot de passe maître est demandé pour retrouver l'accès à votre coffre.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#  TAB 2 — Master password  #}
+    <div id="tab-master" class="sec-panel">
+        <div class="sb-card">
             <div class="sb-card__header">
-                <span class="sb-card__icon sb-card__icon--red"><i class="fas fa-exclamation-triangle"></i></span>
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-key"></i></span>
                 <div>
-                    <h3>Conseils de sécurité</h3>
-                    <p class="sb-card__desc">Maintenez votre compte protégé en utilisant un mot de passe fort et en fermant votre session lorsque vous avez terminé.</p>
+                    <h3>Changer le mot de passe maître</h3>
+                    <p class="sb-card__desc">
+                        Votre mot de passe maître chiffre votre coffre. Il est irrécupérable — ne le perdez jamais.
+                    </p>
                 </div>
             </div>
 
-            <ul class="sb-list">
-                <li>Ne partagez jamais votre mot de passe.</li>
-                <li>Vérifiez régulièrement les sessions actives.</li>
-                <li>Activez le verrouillage automatique pour plus de sécurité.</li>
-            </ul>
+            <div class="sec-warning-banner">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Attention</strong> — After change, you will be logged out and must log back in with your new master password. All your secrets are re-encrypted automatically.
+                </div>
+            </div>
+
+            <form method="post" action="{{ path('app_settings_security') }}" novalidate id="formMasterPwd">
+                <input type="hidden" name="action" value="change_password">
+
+                <div class="sb-field">
+                    <label for="current_password_master">Mot de passe maître actuel <span class="sb-required">*</span></label>
+                    <div class="sb-input-wrap">
+                        <input id="current_password_master" name="current_password" type="password"
+                               class="sb-input" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="sb-eye" onclick="togglePwd('current_password_master', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sb-field">
+                    <label for="new_password">Nouveau mot de passe maître <span class="sb-required">*</span></label>
+                    <div class="sb-input-wrap">
+                        <input id="new_password" name="new_password" type="password"
+                               class="sb-input" placeholder="••••••••" required autocomplete="new-password"
+                               oninput="updateStrength(this.value)">
+                        <button type="button" class="sb-eye" onclick="togglePwd('new_password', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="sec-strength-bar-wrap">
+                        <div class="sec-strength-bar" id="strengthBar"></div>
+                    </div>
+                    <div class="sec-strength-label" id="strengthLabel">Minimum 8 caractères requis</div>
+                </div>
+
+                <div class="sb-field">
+                    <label for="confirm_new_password">Confirmer le nouveau mot de passe <span class="sb-required">*</span></label>
+                    <div class="sb-input-wrap">
+                        <input id="confirm_new_password" name="confirm_new_password" type="password"
+                               class="sb-input" placeholder="••••••••" required autocomplete="new-password"
+                               oninput="checkMatch()">
+                        <button type="button" class="sb-eye" onclick="togglePwd('confirm_new_password', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span class="sb-field__err" id="pwdMatchErr"></span>
+                </div>
+
+                <button type="submit" class="sb-btn sb-btn--primary" onclick="return validatePwd()">
+                    <i class="fas fa-shield-alt"></i> Changer le mot de passe maître
+                </button>
+            </form>
         </div>
     </div>
-</div>
+
+    {#  TAB 3 — Two-step (PATCH 1 INTÉGRÉ)  #}
+    <div id="tab-twostep" class="sec-panel">
+        <div class="sb-card">
+            <div class="sb-card__header">
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-mobile-alt"></i></span>
+                <div>
+                    <h3>Double authentification (2FA)</h3>
+                    <p class="sb-card__desc">Ajoutez une couche de protection supplémentaire à votre compte.</p>
+                </div>
+            </div>
+
+            <div class="sec-2fa-grid">
+                {# TOTP — inchangé #}
+                <div class="sec-2fa-item {{ app.user.totpAuthenticationEnabled ? 'sec-2fa-item--active' : '' }}">
+                    <div class="sec-2fa-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <div class="sec-2fa-info">
+                        <div class="sec-2fa-name">Application d'authentification (TOTP)</div>
+                        <div class="sec-2fa-desc">Google Authenticator, Authy, etc.</div>
+                    </div>
+                    {% if app.user.totpAuthenticationEnabled %}
+                        <span class="sec-2fa-badge" style="background:rgba(77,212,172,0.1);border:1px solid rgba(77,212,172,0.3);color:#4dd4ac;">
+                            <i class="fas fa-check-circle"></i> Activé
+                        </span>
+                        <form method="post" action="{{ path('app_2fa_disable') }}" style="margin-left:8px;">
+                            <input type="hidden" name="_token" value="{{ csrf_token('2fa_disable') }}">
+                            <button type="submit" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:6px 12px;font-size:0.75rem;cursor:pointer;">
+                                <i class="fas fa-times"></i> Désactiver
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{{ path('app_2fa_enable') }}" class="sec-2fa-badge"
+                           style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);color:#a5b4fc;text-decoration:none;">
+                            <i class="fas fa-plus"></i> Activer
+                        </a>
+                    {% endif %}
+                </div>
+
+                {# FIDO2 — remplace Email (supprimé) #}
+                {% set fido2Keys = app.user ? webauthnRepo.findByUser(app.user) : [] %}
+                <div class="sec-2fa-item {{ fido2Keys|length > 0 ? 'sec-2fa-item--active' : '' }}">
+                    <div class="sec-2fa-icon"><i class="fas fa-usb"></i></div>
+                    <div class="sec-2fa-info">
+                        <div class="sec-2fa-name">Clé de sécurité (FIDO2 / WebAuthn)</div>
+                        <div class="sec-2fa-desc">YubiKey, TouchID, Windows Hello, etc.</div>
+                    </div>
+                    {% if fido2Keys|length > 0 %}
+                        <span class="sec-2fa-badge"
+                              style="background:rgba(77,212,172,0.1);border:1px solid rgba(77,212,172,0.3);color:#4dd4ac;">
+                            <i class="fas fa-check-circle"></i> {{ fido2Keys|length }} clé(s)
+                        </span>
+                    {% endif %}
+                    <button onclick="switchTab('keys', document.querySelector('[data-tab=keys]'))"
+                            style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);color:#a5b4fc;border-radius:20px;padding:4px 12px;font-size:0.68rem;font-weight:700;cursor:pointer;margin-left:8px;">
+                        <i class="fas fa-{{ fido2Keys|length > 0 ? 'cog' : 'plus' }}"></i>
+                        {{ fido2Keys|length > 0 ? 'Gérer' : 'Activer' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#  TAB 4 — Devices  #}
+    <div id="tab-devices" class="sec-panel">
+        <div class="sb-card">
+            <div class="sb-card__header">
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-laptop"></i></span>
+                <div>
+                    <h3>Appareils connectés</h3>
+                    <p class="sb-card__desc">Historique des connexions à votre compte.</p>
+                </div>
+            </div>
+
+            <div class="sec-devices-table">
+                <div class="sec-devices-head" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
+                    <span>Appareil</span>
+                    <span>IP</span>
+                    <span>Connexion</span>
+                    <span>Action</span>
+                </div>
+
+                {% if sessions is empty %}
+                    <div style="padding:24px; text-align:center; color:var(--text-muted); font-size:0.88rem;">
+                        <i class="fas fa-history" style="font-size:1.5rem; margin-bottom:8px; display:block;"></i>
+                        Aucune session enregistrée.<br>
+                        <small>Les prochaines connexions apparaîtront ici.</small>
+                    </div>
+                {% else %}
+                    {% for s in sessions %}
+                        <div class="sec-device-row" style="grid-template-columns: 2fr 1fr 1fr 1fr; border-bottom: 1px solid var(--border-subtle);">
+                            <div class="sec-device-info">
+                                <div class="sec-device-icon">
+                                    <i class="{{ s.deviceIcon }}"></i>
+                                </div>
+                                <div>
+                                    <div class="sec-device-name">{{ s.deviceName }}</div>
+                                    <div class="sec-device-ua" style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {{ s.userAgent|slice(0, 60) }}…
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sec-device-date">{{ s.ipAddress }}</div>
+
+                            <div class="sec-device-date">
+                                {{ s.createdAt|date('d M Y') }}<br>
+                                <span style="font-size:0.72rem;">{{ s.createdAt|date('H:i') }}</span>
+                            </div>
+
+                            <div>
+                                {% if s.sessionId == currentSessionId %}
+                                    <span class="sec-device-badge sec-device-badge--current">
+                                        <i class="fas fa-circle" style="font-size:0.5rem;"></i> Actuelle
+                                    </span>
+                                {% else %}
+                                    <form method="post" action="{{ path('app_settings_security') }}">
+                                        <input type="hidden" name="action" value="revoke_session">
+                                        <input type="hidden" name="session_id" value="{{ s.id }}">
+                                        <button type="submit"
+                                                style="background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.3); color:var(--accent-danger); border-radius:6px; padding:4px 10px; font-size:0.72rem; cursor:pointer;"
+                                                onclick="return confirm('Révoquer cette session ?')">
+                                            <i class="fas fa-times"></i> Révoquer
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-subtle);">
+                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+                    Pour révoquer toutes les sessions actives, confirmez votre mot de passe :
+                </p>
+                <form method="post" action="{{ path('app_settings') }}"
+                      onsubmit="return confirm('Déconnecter toutes les sessions ? Vous serez redirigé vers la connexion.')">
+                    <input type="hidden" name="action" value="deauthorize_sessions">
+                    <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                        <div class="sb-field" style="margin:0; flex:1; min-width:200px;">
+                            <label for="devices_confirm_pwd">Mot de passe</label>
+                            <div class="sb-input-wrap">
+                                <input id="devices_confirm_pwd" name="confirm_password" type="password"
+                                       class="sb-input" placeholder="••••••••" required>
+                                <button type="button" class="sb-eye" onclick="togglePwd('devices_confirm_pwd', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="sb-btn sb-btn--outline-danger" style="margin-bottom:0;">
+                            <i class="fas fa-sign-out-alt"></i> Déconnecter toutes les sessions
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {#  TAB 5 — Keys (PATCH 2 INTÉGRÉ — Gestion complète FIDO2)  #}
+    <div id="tab-keys" class="sec-panel">
+        {# ── Enregistrer une nouvelle clé ── #}
+        <div class="sb-card">
+            <div class="sb-card__header">
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-plus-circle"></i></span>
+                <div>
+                    <h3>Enregistrer une clé de sécurité</h3>
+                    <p class="sb-card__desc">YubiKey, TouchID, Windows Hello, clé Bluetooth…</p>
+                </div>
+            </div>
+
+            <div class="sb-field">
+                <label for="webauthn-key-name">Nom de la clé</label>
+                <input id="webauthn-key-name" type="text" class="sb-input"
+                       placeholder="Ex : Ma YubiKey, MacBook TouchID…"
+                       maxlength="100" value="Clé de sécurité">
+            </div>
+
+            <button id="webauthn-register-btn" class="sb-btn sb-btn--primary" onclick="startWebAuthnRegister()">
+                <i class="fas fa-usb"></i> Enregistrer une clé
+            </button>
+
+            <div id="webauthn-register-status" style="display:none; margin-top:14px;" class="sec-action-info">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span id="webauthn-register-msg">En attente de l'authenticator…</span>
+            </div>
+        </div>
+
+        {# ── Liste des clés enregistrées ── #}
+        <div class="sb-card" style="margin-top:16px;">
+            <div class="sb-card__header">
+                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-list"></i></span>
+                <div>
+                    <h3>Clés enregistrées</h3>
+                    <p class="sb-card__desc">Gérez vos clés FIDO2 / WebAuthn actives.</p>
+                </div>
+            </div>
+
+            {% set credentials = app.user ? webauthnRepo.findByUser(app.user) : [] %}
+
+            {% if credentials|length == 0 %}
+                <div style="padding:28px; text-align:center; color:var(--text-muted); font-size:0.88rem;">
+                    <i class="fas fa-usb" style="font-size:2rem; margin-bottom:10px; display:block; opacity:0.3;"></i>
+                    Aucune clé enregistrée.<br>
+                    <small style="margin-top:6px; display:block;">
+                        Utilisez le formulaire ci-dessus pour activer FIDO2.
+                    </small>
+                </div>
+            {% else %}
+                <div class="sec-devices-table">
+                    <div class="sec-devices-head" style="grid-template-columns: 2fr 1fr 1fr 60px;">
+                        <span>Clé</span>
+                        <span>Enregistrée</span>
+                        <span>Dernière utilisation</span>
+                        <span></span>
+                    </div>
+
+                    {% for cred in credentials %}
+                        <div class="sec-device-row" style="grid-template-columns: 2fr 1fr 1fr 60px; border-bottom:1px solid var(--border-subtle);">
+                            <div class="sec-device-info">
+                                <div class="sec-device-icon"><i class="fas fa-usb"></i></div>
+                                <div>
+                                    <div class="sec-device-name">{{ cred.name }}</div>
+                                    <div class="sec-device-ua" style="font-size:0.72rem; color:var(--text-muted);">
+                                        Compteur : {{ cred.signCount }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sec-device-date">
+                                {{ cred.createdAt|date('d M Y') }}
+                            </div>
+
+                            <div class="sec-device-date">
+                                {% if cred.lastUsedAt %}
+                                    {{ cred.lastUsedAt|date('d M Y') }}<br>
+                                    <span style="font-size:0.72rem;">{{ cred.lastUsedAt|date('H:i') }}</span>
+                                {% else %}
+                                    <span style="color:var(--text-muted); font-size:0.78rem;">Jamais</span>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <form method="post" action="{{ path('webauthn_delete', {'id': cred.id}) }}" onsubmit="return confirm('Supprimer « {{ cred.name }} » ?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('webauthn_delete_' ~ cred.id) }}">
+                                    <button type="submit" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--accent-danger);border-radius:6px;padding:5px 10px;font-size:0.78rem;cursor:pointer;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {# ── Info FIDO2 ── #}
+        <div class="sec-tip-card" style="margin-top:16px;">
+            <div class="sec-tip-icon"><i class="fas fa-shield-alt"></i></div>
+            <div>
+                <div class="sec-tip-title">Qu'est-ce que FIDO2 / WebAuthn ?</div>
+                <div class="sec-tip-text">
+                    FIDO2 utilise la <strong>cryptographie asymétrique</strong> : une paire clé privée / clé publique est générée sur votre appareil. La clé privée ne quitte <em>jamais</em> votre dispositif. Le serveur ne stocke que la clé publique — résistant au phishing, aux attaques MITM et aux fuites de base de données. Standard W3C adopté par Google, GitHub et Microsoft.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>{# /sb-settings #}
 
 <style>
-    .sb-list {
-        margin: 18px 0 0 0;
-        padding-left: 20px;
-        color: #cbd5e1;
-        line-height: 1.7;
-    }
-    .sb-list li {
-        margin-bottom: 10px;
-    }
-    .sb-checkbox-field {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        margin: 16px 0 24px;
-    }
-    .sb-checkbox-field label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.94rem;
-        color: #d1d5db;
-    }
-    .sb-checkbox-field input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        accent-color: #4dd4ac;
-    }
+.sec-tabs {
+    display: flex;
+    gap: 4px; margin-bottom: 20px;
+    background: var(--bg-card); border: 1px solid var(--border-main);
+    border-radius: 14px; padding: 6px; flex-wrap: wrap;
+}
+.sec-tab {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 16px; border-radius: 10px; border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.86rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.sec-tab:hover  { background: var(--bg-hover); color: var(--text-primary); }
+.sec-tab.active { background: var(--bg-active); color: var(--accent-blue); font-weight: 600; }
+.sec-tab i { font-size: 0.82rem; }
+
+.sec-panel { display: none; }
+.sec-panel.active { display: block; }
+
+.sec-warning-banner {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(249,115,22,0.08);
+    border: 1px solid rgba(249,115,22,0.3);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 22px;
+    font-size: 0.88rem; color: #fdba74; line-height: 1.55;
+}
+.sec-warning-banner i { color: #f97316; margin-top: 2px; flex-shrink: 0; }
+.sec-warning-banner strong { color: #f97316; }
+
+.sec-action-info {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(111,191,255,0.06); border: 1px solid rgba(111,191,255,0.15);
+    border-radius: 8px;
+    padding: 10px 12px; margin: 12px 0 18px;
+    font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;
+}
+.sec-action-info i { color: var(--accent-blue); flex-shrink: 0; margin-top: 1px; }
+
+.sec-strength-bar-wrap {
+    height: 4px; background: var(--border-input); border-radius: 2px;
+    margin-top: 8px; overflow: hidden;
+}
+.sec-strength-bar { height: 100%; width: 0%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+.sec-strength-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
+
+.sec-2fa-grid { display: flex; flex-direction: column; gap: 10px; }
+.sec-2fa-item {
+    display: flex; align-items: center;
+    gap: 14px; padding: 16px;
+    border: 1px solid var(--border-input); border-radius: 12px;
+    background: var(--bg-input); transition: all 0.15s;
+}
+.sec-2fa-item--disabled { opacity: 0.5; cursor: not-allowed; }
+.sec-2fa-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: rgba(111,191,255,0.1); color: var(--accent-blue);
+    display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
+}
+.sec-2fa-info { flex: 1; }
+.sec-2fa-name { color: var(--text-primary); font-size: 0.9rem; font-weight: 600; }
+.sec-2fa-desc { color: var(--text-muted); font-size: 0.78rem; margin-top: 2px; }
+.sec-2fa-badge { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; padding: 4px 10px; border-radius: 20px; flex-shrink: 0; }
+.sec-2fa-badge--soon { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); color: var(--accent-warn); }
+
+.sec-devices-table { border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; }
+.sec-devices-head {
+    display: grid; grid-template-columns: 2fr 1fr 1fr;
+    padding: 9px 16px; background: var(--bg-input);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+.sec-device-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr;
+    align-items: center; padding: 14px 16px; gap: 8px;
+}
+.sec-device-info { display: flex; align-items: center; gap: 12px; }
+.sec-device-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: var(--bg-input); border: 1px solid var(--border-input);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-blue); font-size: 0.9rem; flex-shrink: 0;
+}
+.sec-device-name { color: var(--text-primary); font-size: 0.88rem; font-weight: 600; }
+.sec-device-ua   { color: var(--text-muted); font-size: 0.75rem; margin-top: 2px; }
+.sec-device-date { color: var(--text-muted); font-size: 0.8rem; }
+.sec-device-badge { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-block; }
+.sec-device-badge--current { background: rgba(77,212,172,0.1); border: 1px solid rgba(77,212,172,0.3); color: var(--accent-teal); }
+
+.sec-fingerprint-block {
+    background: var(--bg-body); border: 1px solid var(--border-input);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 8px;
+}
+.sec-fingerprint-label {
+    font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 700; margin-bottom: 10px;
+}
+.sec-fingerprint-value {
+    font-family: 'Courier New', monospace; font-size: 0.95rem;
+    color: #d4a574; word-break: break-all; line-height: 1.6; margin-bottom: 14px;
+}
+.sec-fp-copy-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+    background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: 8px; color: var(--text-secondary); font-size: 0.82rem;
+    cursor: pointer; transition: all 0.15s;
+}
+.sec-fp-copy-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+.sec-tip-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: var(--bg-card); border: 1px solid var(--border-main);
+    border-radius: 12px; padding: 16px 18px; margin-top: 12px;
+}
+.sec-tip-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: rgba(111,191,255,0.1); color: var(--accent-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; flex-shrink: 0;
+}
+.sec-tip-title { color: var(--text-primary); font-size: 0.88rem; font-weight: 600; margin-bottom: 4px; }
+.sec-tip-text  { color: var(--text-secondary); font-size: 0.82rem; line-height: 1.55; }
+
+@media (max-width: 600px) {
+    .sec-tab span { display: none; }
+    .sec-tab { padding: 9px 12px; }
+    .sec-devices-head, .sec-device-row { grid-template-columns: 1fr 1fr; }
+    .sec-device-date { display: none; }
+}
 </style>
+
+<script>
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.sec-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sec-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    btn.classList.add('active');
+    localStorage.setItem('securboxSecTab', tabId);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore tab
+    var saved = localStorage.getItem('securboxSecTab');
+    if (saved) {
+        var btn = document.querySelector('[data-tab="' + saved + '"]');
+        if (btn) switchTab(saved, btn);
+    }
+
+    // Detect device
+    var ua = navigator.userAgent;
+    var nameEl = document.getElementById('deviceName');
+    var uaEl   = document.getElementById('deviceUa');
+    var iconEl = document.getElementById('deviceIconType');
+
+    if (nameEl) {
+        if (/iPhone|iPad/.test(ua)) { nameEl.textContent = 'Application iOS'; if (iconEl) iconEl.className = 'fas fa-mobile-alt'; }
+        else if (/Android/.test(ua)) { nameEl.textContent = 'Application Android'; if (iconEl) iconEl.className = 'fas fa-mobile-alt'; }
+        else if (/Edg\//.test(ua))    nameEl.textContent = 'Microsoft Edge Web';
+        else if (/Chrome/.test(ua))   nameEl.textContent = 'Google Chrome Web';
+        else if (/Safari/.test(ua))   nameEl.textContent = 'Safari Web';
+        else if (/Firefox/.test(ua))  nameEl.textContent = 'Firefox Web';
+        else nameEl.textContent = 'Navigateur Web';
+    }
+    if (uaEl) uaEl.textContent = ua.substring(0, 70) + (ua.length > 70 ? '…' : '');
+
+    // Update action info text on change
+    var sel = document.getElementById('timeout_action');
+    if (sel) {
+        sel.addEventListener('change', updateActionInfo);
+        updateActionInfo();
+    }
+});
+
+function updateActionInfo() {
+    var sel  = document.getElementById('timeout_action');
+    var info = document.getElementById('actionInfoText');
+    if (!sel || !info) return;
+    if (sel.value === 'lock') {
+        info.textContent = 'Mode Verrouiller : votre session reste active. Un écran de verrouillage apparaît et redemande votre mot de passe maître.';
+    } else {
+        info.textContent = 'Mode Déconnecter : vous serez entièrement déconnecté et redirigé vers la page de connexion.';
+    }
+}
+
+function togglePwd(id, btn) {
+    var inp = document.getElementById(id);
+    var icon = btn.querySelector('i');
+    if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+
+function updateStrength(value) {
+    var bar = document.getElementById('strengthBar');
+    var lbl = document.getElementById('strengthLabel');
+    if (!bar || !lbl) return;
+    var score = 0;
+    if (value.length >= 8)  score++;
+    if (value.length >= 12) score++;
+    if (/[A-Z]/.test(value)) score++;
+    if (/[0-9]/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value)) score++;
+    var levels = [
+        { pct:'0%',   color:'transparent', text:'Minimum 8 caractères' },
+        { pct:'20%',  color:'#ef4444',     text:'Très faible' },
+        { pct:'40%',  color:'#f97316',     text:'Faible' },
+        { pct:'60%',  color:'#fbbf24',     text:'Moyen' },
+        { pct:'80%',  color:'#84cc16',     text:'Fort' },
+        { pct:'100%', color:'#4dd4ac',     text:'Très fort ' },
+    ];
+    var l = value.length === 0 ? levels[0] : levels[Math.min(5, Math.max(1, score))];
+    bar.style.width = l.pct; bar.style.background = l.color;
+    lbl.textContent = l.text;
+    lbl.style.color = l.color === 'transparent' ? 'var(--text-muted)' : l.color;
+}
+
+function checkMatch() {
+    var np  = document.getElementById('new_password');
+    var cnp = document.getElementById('confirm_new_password');
+    var err = document.getElementById('pwdMatchErr');
+    if (!np || !cnp || !err) return;
+    if (cnp.value && cnp.value !== np.value) {
+        err.textContent = 'Les mots de passe ne correspondent pas.';
+    } else {
+        err.textContent = '';
+    }
+}
+
+function validatePwd() {
+    var np  = document.getElementById('new_password');
+    var cnp = document.getElementById('confirm_new_password');
+    var err = document.getElementById('pwdMatchErr');
+    if (!np || !cnp) return true;
+    if (np.value.length < 8) {
+        if (err) err.textContent = 'Minimum 8 caractères requis.';
+        np.focus(); return false;
+    }
+    if (np.value !== cnp.value) {
+        if (err) err.textContent = 'Les mots de passe ne correspondent pas.';
+        cnp.focus(); return false;
+    }
+    return true;
+}
+
+function copyFingerprint() {
+    var val = document.getElementById('fingerprintValue');
+    if (!val) return;
+    navigator.clipboard.writeText(val.textContent.trim()).then(function() {
+        var btn = document.querySelector('.sec-fp-copy-btn');
+        if (!btn) return;
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copié !';
+        btn.style.color = 'var(--accent-teal)';
+        btn.style.borderColor = 'var(--accent-teal)';
+        setTimeout(function() {
+            btn.innerHTML = orig;
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 2000);
+    });
+}
+</script>
+
+{# ═══════════════════════════════════════════════════════════════════
+   PATCH 3 — Script WebAuthn (Exécution cryptographique asymétrique)
+   ═══════════════════════════════════════════════════════════════════ #}
+<script>
+async function startWebAuthnRegister() {
+    const btn       = document.getElementById('webauthn-register-btn');
+    const statusDiv = document.getElementById('webauthn-register-status');
+    const statusMsg = document.getElementById('webauthn-register-msg');
+    const keyName   = (document.getElementById('webauthn-key-name').value.trim()) || 'Clé de sécurité';
+
+    btn.disabled            = true;
+    statusDiv.style.display = 'flex';
+    statusMsg.textContent   = 'Récupération des options du serveur…';
+
+    statusDiv.style.background  = '';
+    statusDiv.style.borderColor = '';
+    const icon = statusDiv.querySelector('i');
+    icon.className = 'fas fa-spinner fa-spin';
+    icon.style.color = '';
+
+    try {
+        // ── Étape 1 : obtenir le challenge ──
+        const optRes = await fetch('{{ path('webauthn_register_options') }}');
+        const opts   = await optRes.json();
+        if (!optRes.ok) throw new Error(opts.error || 'Erreur serveur (' + optRes.status + ')');
+
+        statusMsg.textContent = 'Approchez ou touchez votre clé de sécurité…';
+
+        opts.challenge = b64uToBuffer(opts.challenge);
+        opts.user.id   = b64uToBuffer(opts.user.id);
+        if (opts.excludeCredentials) {
+            opts.excludeCredentials = opts.excludeCredentials.map(c => ({
+                ...c, id: b64uToBuffer(c.id),
+            }));
+        }
+
+        // ── Étape 2 : créer la clé via l'authenticator ──
+        const credential = await navigator.credentials.create({ publicKey: opts });
+
+        statusMsg.textContent = 'Envoi au serveur pour vérification…';
+
+        // ── Étape 3 : envoyer la réponse ──
+        const payload = {
+            name:    keyName,
+            id:      credential.id,
+            rawId:   bufferToB64u(credential.rawId),
+            type:    credential.type,
+            response: {
+                clientDataJSON:    bufferToB64u(credential.response.clientDataJSON),
+                attestationObject: bufferToB64u(credential.response.attestationObject),
+            },
+        };
+
+        const verRes  = await fetch('{{ path('webauthn_register_verify') }}', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+        });
+        const verData = await verRes.json();
+        if (!verRes.ok || !verData.success) throw new Error(verData.error || 'Vérification échouée');
+
+        // ── Succès ──
+        statusMsg.textContent      = '✓ ' + verData.message;
+        statusDiv.style.background  = 'rgba(77,212,172,0.08)';
+        statusDiv.style.borderColor = 'rgba(77,212,172,0.3)';
+        icon.className  = 'fas fa-check-circle';
+        icon.style.color = 'var(--accent-teal)';
+
+        setTimeout(() => location.reload(), 1500);
+
+    } catch (err) {
+        console.error('[WebAuthn]', err);
+
+        let msg = err.message || 'Erreur inconnue';
+        if (err.name === 'NotAllowedError')  msg = 'Opération annulée ou délai dépassé. Réessayez.';
+        if (err.name === 'InvalidStateError') msg = 'Cette clé est déjà enregistrée.';
+        if (err.name === 'SecurityError')     msg = 'Erreur de sécurité — assurez-vous d\'utiliser http://127.0.0.1:8000';
+
+        statusMsg.textContent       = '✗ ' + msg;
+        statusDiv.style.background  = 'rgba(239,68,68,0.08)';
+        statusDiv.style.borderColor = 'rgba(239,68,68,0.3)';
+        icon.className  = 'fas fa-exclamation-circle';
+        icon.style.color = '#f87171';
+        btn.disabled = false;
+    }
+}
+
+function b64uToBuffer(b64u) {
+    const b64     = b64u.replace(/-/g, '+').replace(/_/g, '/');
+    const padded  = b64.padEnd(b64.length + (4 - b64.length % 4) % 4, '=');
+    const binary  = atob(padded);
+    const bytes   = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+}
+
+function bufferToB64u(buf) {
+    const bytes  = new Uint8Array(buf);
+    let   binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+</script>
 {% endblock %}

@@ -8,6 +8,9 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -15,7 +18,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFactorInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -25,15 +28,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180)]
     private ?string $email = null;
 
-    /**
-     * @var list<string> The user roles
-     */
     #[ORM\Column]
     private array $roles = [];
 
-    /**
-     * @var string The hashed password
-     */
     #[ORM\Column]
     private ?string $password = null;
 
@@ -52,29 +49,57 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private bool $isVerified = false;
 
-    /**
-     * @var Collection<int, Secret>
-     */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $verificationToken = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $securityQuestion = null;
+
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $securityAnswerEncrypted = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $securityAnswerIv = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
+    #[ORM\Column]
+    private bool $isTotpEnabled = false;
+
     #[ORM\OneToMany(targetEntity: Secret::class, mappedBy: 'user', orphanRemoval: true)]
     private Collection $secrets;
 
-    /**
-     * @var Collection<int, AccessLog>
-     */
-    #[ORM\OneToMany(targetEntity: AccessLog::class, mappedBy: 'user')]
+    #[ORM\OneToMany(targetEntity: AccessLog::class, mappedBy: 'user', cascade: ['remove'], orphanRemoval: true)]
     private Collection $accessLogs;
 
-    /**
-     * @var Collection<int, \App\Entity\Collection>
-     */
     #[ORM\OneToMany(targetEntity: \App\Entity\Collection::class, mappedBy: 'user', orphanRemoval: true)]
     private Collection $collections;
+
+    #[ORM\OneToMany(targetEntity: UserNotificationDismissal::class, mappedBy: 'user', cascade: ['remove'])]
+    private Collection $notificationDismissals;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $name = null;
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): self
+    {
+        $this->name = $name;
+
+        return $this;
+    }
 
     public function __construct()
     {
         $this->secrets = new ArrayCollection();
         $this->accessLogs = new ArrayCollection();
         $this->collections = new ArrayCollection();
+        $this->notificationDismissals = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -184,9 +209,66 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Secret>
-     */
+    public function isVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function setIsVerified(bool $isVerified): self
+    {
+        $this->isVerified = $isVerified;
+
+        return $this;
+    }
+
+    public function getVerificationToken(): ?string
+    {
+        return $this->verificationToken;
+    }
+
+    public function setVerificationToken(?string $verificationToken): self
+    {
+        $this->verificationToken = $verificationToken;
+
+        return $this;
+    }
+
+    public function getSecurityQuestion(): ?string
+    {
+        return $this->securityQuestion;
+    }
+
+    public function setSecurityQuestion(?string $securityQuestion): self
+    {
+        $this->securityQuestion = $securityQuestion;
+
+        return $this;
+    }
+
+    public function getSecurityAnswerEncrypted(): ?string
+    {
+        return $this->securityAnswerEncrypted;
+    }
+
+    public function setSecurityAnswerEncrypted(?string $securityAnswerEncrypted): self
+    {
+        $this->securityAnswerEncrypted = $securityAnswerEncrypted;
+
+        return $this;
+    }
+
+    public function getSecurityAnswerIv(): ?string
+    {
+        return $this->securityAnswerIv;
+    }
+
+    public function setSecurityAnswerIv(?string $securityAnswerIv): self
+    {
+        $this->securityAnswerIv = $securityAnswerIv;
+
+        return $this;
+    }
+
     public function getSecrets(): Collection
     {
         return $this->secrets;
@@ -213,9 +295,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, AccessLog>
-     */
     public function getAccessLogs(): Collection
     {
         return $this->accessLogs;
@@ -242,9 +321,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, \App\Entity\Collection>
-     */
     public function getCollections(): Collection
     {
         return $this->collections;
@@ -271,15 +347,70 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function isVerified(): bool
+    public function getNotificationDismissals(): Collection
     {
-        return $this->isVerified;
+        return $this->notificationDismissals;
     }
 
-    public function setIsVerified(bool $isVerified): self
+    public function addNotificationDismissal(UserNotificationDismissal $dismissal): static
     {
-        $this->isVerified = $isVerified;
+        if (! $this->notificationDismissals->contains($dismissal)) {
+            $this->notificationDismissals->add($dismissal);
+            $dismissal->setUser($this);
+        }
 
         return $this;
+    }
+
+    public function removeNotificationDismissal(UserNotificationDismissal $dismissal): static
+    {
+        if ($this->notificationDismissals->removeElement($dismissal)) {
+            if ($dismissal->getUser() === $this) {
+                $dismissal->setUser(null);
+            }
+        }
+
+        return $this;
+
+    }
+
+    public function getTotpSecret(): ?string
+    {
+        return $this->totpSecret;
+    }
+
+    public function setTotpSecret(?string $totpSecret): self
+    {
+        $this->totpSecret = $totpSecret;
+
+        return $this;
+    }
+
+    public function isTotpEnabled(): bool
+    {
+        return $this->isTotpEnabled;
+    }
+
+    public function setIsTotpEnabled(bool $enabled): self
+    {
+        $this->isTotpEnabled = $enabled;
+
+        return $this;
+    }
+
+    // Interface TwoFactorInterface
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->isTotpEnabled && null !== $this->totpSecret;
+    }
+
+    public function getTotpAuthenticationUsername(): string
+    {
+        return $this->email;
+    }
+
+    public function getTotpAuthenticationConfiguration(): ?TotpConfigurationInterface
+    {
+        return $this->totpSecret ? new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6) : null;
     }
 }

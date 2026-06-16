@@ -49,7 +49,7 @@
                     <i class="fas fa-eye me-1"></i> Voir
                 </a>
                 <form method="post" action="{{ path('app_collection_delete', {id: col.id}) }}"
-                      onsubmit="return confirm('Supprimer cette collection ? Les secrets ne seront pas supprimés.')" style="margin:0;">
+                     onsubmit="return confirm('Attention ! Supprimer cette collection supprimera également TOUS les secrets qu\'elle contient de manière définitive. Confirmer ?')" style="margin:0;">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_collection' ~ col.id) }}">
                     <button type="submit"
                             style="background:#1a2035; border:1px solid #252d3d; border-radius:7px;

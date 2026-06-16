@@ -3,8 +3,8 @@
       dir="{{ app.request.locale == 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}SecurBox{% endblock %}</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
@@ -27,6 +27,11 @@
     </script>
 
     <style>
+
+    @keyframes notifIn {
+    from { transform: translateY(-8px) scale(0.97); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+}
         /* ══════════════════════════════════════════════════════
            CSS CUSTOM PROPERTIES — DARK MODE (défaut)
            ══════════════════════════════════════════════════════ */
@@ -412,7 +417,8 @@
         }
         .auth-card {
             background-color: var(--bg-card); border: 1px solid var(--border-input);
-            border-radius: 16px; padding: 40px; width: 100%; max-width: 420px;
+            border-radius: 16px; padding: 40px; width: 100%; max-width: 600px;
+
         }
         .auth-logo { color: var(--accent-blue); font-weight: 700; font-size: 1.8rem; }
         .auth-logo span { color: var(--accent-teal); }
@@ -595,7 +601,162 @@
             .sb-hero__title { font-size: 1.7rem; }
             .sb-grid { grid-template-columns: 1fr; }
         }
+
+
+        /* ══════════════════════════════════════════════════════
+           TABLET — icon-only sidebar, no labels
+           ══════════════════════════════════════════════════════ */
+        @media (max-width: 1023px) and (min-width: 641px) {
+            .sidebar {
+                width: var(--sidebar-collapsed-width) !important;
+            }
+            .main-content {
+                margin-left: var(--sidebar-collapsed-width) !important;
+            }
+            .sidebar .nav-label,
+            .sidebar .sidebar-bottom-label,
+            .sidebar .nav-arrow,
+            .sidebar .brand-copy { display: none !important; }
+            .sidebar .nav-item,
+            .sidebar .sidebar-bottom-item {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+                border-radius: 16px;
+                margin: 2px 10px;
+            }
+            .sidebar .nav-sub { display: none !important; }
+            .sidebar-edge-toggle { display: none !important; }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           PHONE — sidebar hidden, bottom nav + drawer take over
+           ══════════════════════════════════════════════════════ */
+        @media (max-width: 640px) {
+            .sidebar          { display: none !important; }
+            .main-content     { margin-left: 0 !important; }
+            .top-bar          { padding: 8px 14px; min-height: 58px; }
+            .content-area     { padding: 14px 10px 80px; }
+            .content-area--vault { padding-left: 0; padding-top: 0; }
+
+            /* vault modal full screen on phone */
+            #vaultModalDialog { max-width: 100% !important; border-radius: 16px 16px 0 0 !important; }
+            #vaultModal       { padding: 0 !important; align-items: flex-end !important; }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           BOTTOM NAV (phone only)
+           ══════════════════════════════════════════════════════ */
+        .mobile-bottom-nav {
+            display: none;
+        }
+        @media (max-width: 640px) {
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                background: var(--bg-sidebar);
+                border-top: 1px solid var(--border-main);
+                z-index: 200;
+                height: 58px;
+                align-items: center;
+                justify-content: space-around;
+                padding-bottom: env(safe-area-inset-bottom);
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+            .mobile-bottom-nav a,
+            .mobile-bottom-nav button {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 3px;
+                color: var(--text-muted);
+                text-decoration: none;
+                font-size: 0.58rem;
+                font-weight: 600;
+                letter-spacing: 0.03em;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 6px 12px;
+                border-radius: 10px;
+                transition: color 0.15s;
+                min-width: 48px;
+                min-height: 48px;
+                justify-content: center;
+            }
+            .mobile-bottom-nav a i,
+            .mobile-bottom-nav button i { font-size: 1.15rem; }
+            .mobile-bottom-nav a:hover,
+            .mobile-bottom-nav button:hover { color: var(--text-primary); }
+            .mobile-bottom-nav a.active { color: var(--accent-blue); }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           SLIDE-OUT DRAWER (phone only)
+           ══════════════════════════════════════════════════════ */
+        .mobile-drawer-overlay,
+        .mobile-drawer { display: none; }
+
+        @media (max-width: 640px) {
+            .mobile-drawer-overlay {
+                display: block;
+                position: fixed; inset: 0;
+                background: rgba(0,0,0,0.55);
+                z-index: 300;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+            }
+            .mobile-drawer-overlay.open {
+                opacity: 1;
+                pointer-events: all;
+            }
+            .mobile-drawer {
+                display: flex;
+                flex-direction: column;
+                position: fixed;
+                left: -290px; top: 0; bottom: 0;
+                width: 280px;
+                background: var(--bg-sidebar);
+                border-right: 1px solid var(--border-main);
+                z-index: 301;
+                transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow-y: auto;
+                padding-bottom: 32px;
+            }
+            .mobile-drawer.open { left: 0; }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           TOUCH — bigger tap targets
+           ══════════════════════════════════════════════════════ */
+        @media (pointer: coarse) {
+            .nav-item,
+            .nav-sub-item,
+            .sidebar-bottom-item   { min-height: 48px; }
+            .top-icon-btn          { width: 48px; height: 48px; }
+            .sb-btn                { min-height: 46px; }
+        }
+
     </style>
+   <style>
+    :root {
+        --brand-primary: {{ app_primary }};
+        --brand-accent:  {{ app_accent }};
+    }
+
+    /* Nom de l'app dans la sidebar */
+    .sidebar-logo h4,
+    .sidebar-logo .brand-text { color: var(--brand-primary) !important; }
+
+    /* Slogan sous le nom */
+    .sidebar-logo small { color: var(--brand-accent) !important; }
+
+    /* Lock screen — nom uniquement */
+    .vls-brand-name { color: var(--brand-primary) !important; }
+</style>
 </head>
 <body>
 {% block full_page %}
@@ -607,16 +768,14 @@
         <i class="fas fa-chevron-left sidebar-toggle-icon"></i>
     </button>
     <div class="sidebar-logo">
-        <div class="brand-lockup">
-            <div class="brand-mark" aria-hidden="true">
-                <i class="fas fa-lock"></i>
-            </div>
-            <div class="brand-copy">
-                <h4>Secur<span class="brand-accent">Box</span></h4>
-                <small>Coffre-fort numérique</small>
-            </div>
+    <div class="brand-lockup">
+        {% include 'components/_logo.html.twig' with {size: 'sm'} %}
+        <div class="brand-copy">
+            <h4>{{ app_name }}</h4>
+            <small>{{ app_slogan }}</small>
         </div>
     </div>
+</div>
 
     <div class="sidebar-main-nav">
 
@@ -628,7 +787,7 @@
             <span class="nav-label">Coffres</span>
         </a>
 
-        {#  Envoyer — placeholder 
+        {#  Envoyer — placeholder
         <a href="#" class="nav-item" style="opacity:0.45; pointer-events:none; cursor:default;" title="Envoyer">
             <i class="far fa-paper-plane nav-icon"></i>
             <span class="nav-label">Envoyer</span>
@@ -692,9 +851,7 @@
             <span class="sidebar-bottom-label">Console d'administration</span>
         </a>
         {% endif %}
-        <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Réduire / agrandir le menu">
-            <i class="fas fa-chevron-left sidebar-toggle-icon"></i>
-        </button>
+
     </div>
 </div>
 
@@ -761,22 +918,61 @@
 
         {% set displayName = app.user.email|split('@')[0]|replace({'.': ' ', '_': ' ', '-': ' '})|title %}
         <div class="top-bar-actions">
-            {# Notifications #}
-             <div style="position:relative;">
-        <button class="top-icon-btn" type="button" onclick="toggleNotifications()" title="Notifications">
+            <div style="position:relative;">
+    <button class="top-icon-btn" type="button" onclick="toggleNotifications()" title="Notifications" id="notifBtn">
         <i class="far fa-bell"></i>
         <span class="notification-dot" id="notifBadge" style="display:none;">0</span>
     </button>
-    <div id="notifPanel" style="display:none; position:absolute; top:48px; right:0;
-         width:320px; background:var(--bg-card); border:1px solid var(--border-input);
-         border-radius:12px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.3); z-index:999;">
-        <div style="padding:12px 16px; border-bottom:1px solid var(--border-input); display:flex; align-items:center; justify-content:space-between;">
-            <span style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">Notifications</span>
+
+    <div id="notifPanel" style="display:none; position:absolute; top:52px; right:-8px;
+         width:380px; background:var(--bg-card); border:1px solid var(--border-input);
+         border-radius:14px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.4); z-index:999;">
+
+        {# ── Header ── #}
+        <div style="padding:14px 16px 10px; border-bottom:1px solid var(--border-input); background:var(--bg-topbar);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:0.95rem; font-weight:700; color:var(--text-primary);">
+                    <i class="far fa-bell" style="color:var(--accent-blue); margin-right:6px;"></i>
+                    Notifications
+                </span>
+                <button onclick="markAllRead()" style="background:none; border:none; cursor:pointer;
+                        font-size:0.75rem; color:var(--accent-blue); padding:3px 8px;
+                        border-radius:6px; border:1px solid var(--border-input);"
+                        onmouseenter="this.style.background='var(--bg-hover)'"
+                        onmouseleave="this.style.background='none'">
+                    Tout lire
+                </button>
+            </div>
+            {# Filter tabs #}
+            <div style="display:flex; gap:6px;">
+                <button onclick="setNotifFilter('all')" id="filterAll"
+                        style="font-size:0.75rem; padding:4px 12px; border-radius:20px; border:none; cursor:pointer;
+                               background:var(--accent-blue); color:#0f1117; font-weight:600;">
+                    Tout
+                </button>
+                <button onclick="setNotifFilter('unread')" id="filterUnread"
+                        style="font-size:0.75rem; padding:4px 12px; border-radius:20px; cursor:pointer;
+                               background:transparent; color:var(--text-secondary);
+                               border:1px solid var(--border-input);">
+                    Non lu <span id="filterUnreadCount"></span>
+                </button>
+            </div>
         </div>
-        <div id="notifBody" style="max-height:360px; overflow-y:auto;"></div>
+
+        {# ── Body ── #}
+        <div id="notifBody" style="max-height:420px; overflow-y:auto;"></div>
+
+        {# ── Footer ── #}
+        <div style="padding:10px 16px; border-top:1px solid var(--border-input); text-align:center; background:var(--bg-topbar);">
+            <a href="/admin/logs" style="font-size:0.78rem; color:var(--accent-blue); text-decoration:none;">
+                Voir tous les journaux d'accès →
+            </a>
+        </div>
     </div>
 </div>
-            
+
+
+
 
             {# ══ TOGGLE DARK / LIGHT ══ #}
             <button class="top-icon-btn" type="button" onclick="toggleTheme()" id="themeToggleBtn" title="Changer le thème">
@@ -862,6 +1058,536 @@
     </div>
 </div>
 
+{# ══ MOBILE BOTTOM NAV ══ #}
+<nav class="mobile-bottom-nav">
+    <a href="{{ path('app_vault_index') }}"
+       class="{{ app.request.get('_route') starts with 'app_vault' ? 'active' : '' }}">
+        <i class="fas fa-vault"></i>
+        Coffres
+    </a>
+    <button type="button" onclick="toggleMobileDrawer()">
+        <i class="fas fa-bars"></i>
+        Menu
+    </button>
+    <button type="button" onclick="openVaultModal('{{ path('app_vault_new', {'type': 'password', 'modal': '1'}) }}', '🔑 Nouveau')">
+        <i class="fas fa-plus-circle" style="color:var(--accent-blue); font-size:1.4rem;"></i>
+        Nouveau
+    </button>
+    <a href="{{ path('app_settings') }}"
+       class="{{ app.request.get('_route') starts with 'app_settings' ? 'active' : '' }}">
+        <i class="fas fa-cog"></i>
+        Compte
+    </a>
+</nav>
+
+{# ══ MOBILE DRAWER OVERLAY ══ #}
+<div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="closeMobileDrawer()"></div>
+
+{# ══ MOBILE DRAWER ══ #}
+<div class="mobile-drawer" id="mobileDrawer">
+    {# Header #}
+    <div style="padding:20px 16px 14px; border-bottom:1px solid var(--border-main); flex-shrink:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                {% include 'components/_logo.html.twig' with {size: 'sm'} %}
+                <div>
+                    <div style="color:var(--brand-primary); font-weight:700; font-size:1rem;">
+    {{ app_name }}
+</div>
+                    {% set displayName = app.user.email|split('@')[0]|replace({'.': ' ', '_': ' ', '-': ' '})|title %}
+                    <div style="color:var(--text-muted); font-size:0.72rem;">{{ displayName }}</div>
+                </div>
+            </div>
+            <button onclick="closeMobileDrawer()"
+                    style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:6px; font-size:1.1rem;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    {# Nav links #}
+    <div style="padding:8px 0; flex:1;">
+
+        {# Coffres #}
+        <a href="{{ path('app_vault_index') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:{{ app.request.get('_route') starts with 'app_vault' ? 'var(--accent-blue)' : 'var(--text-secondary)' }};
+                  text-decoration:none; font-size:0.9rem; font-weight:500;">
+            <i class="fas fa-vault" style="width:20px; text-align:center;"></i> Mon Coffre-Fort
+        </a>
+
+        {# Favoris #}
+        <a href="{{ path('app_vault_index', {favorite: 1}) }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-star" style="width:20px; text-align:center; color:var(--accent-warn);"></i> Favoris
+        </a>
+
+        {# Mots de passe #}
+        <a href="{{ path('app_vault_index', {type: 'password'}) }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-key" style="width:20px; text-align:center; color:var(--accent-blue);"></i> Mots de passe
+        </a>
+
+        {# Clés API #}
+        <a href="{{ path('app_vault_index', {type: 'api_key'}) }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-code" style="width:20px; text-align:center; color:var(--accent-teal);"></i> Clés API
+        </a>
+
+        {# Notes #}
+        <a href="{{ path('app_vault_index', {type: 'note'}) }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-sticky-note" style="width:20px; text-align:center; color:var(--accent-warn);"></i> Notes sécurisées
+        </a>
+
+        <div style="border-top:1px solid var(--border-main); margin:6px 0;"></div>
+
+        {# Outils #}
+        <a href="{{ path('tools_generator') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-magic" style="width:20px; text-align:center;"></i> Générateur
+        </a>
+        <a href="{{ path('tools_import') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-file-import" style="width:20px; text-align:center;"></i> Import
+        </a>
+        <a href="{{ path('tools_export') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-file-export" style="width:20px; text-align:center;"></i> Export
+        </a>
+
+        <div style="border-top:1px solid var(--border-main); margin:6px 0;"></div>
+
+        {# Paramètres #}
+        <a href="{{ path('app_settings') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:{{ app.request.get('_route') starts with 'app_settings' ? 'var(--accent-blue)' : 'var(--text-secondary)' }};
+                  text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-user-cog" style="width:20px; text-align:center;"></i> Mon compte
+        </a>
+        <a href="{{ path('app_settings_security') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-shield-alt" style="width:20px; text-align:center;"></i> Sécurité
+        </a>
+        <a href="{{ path('app_settings_appearance') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-palette" style="width:20px; text-align:center;"></i> Apparence
+        </a>
+
+        {% if is_granted('ROLE_ADMIN') %}
+        <div style="border-top:1px solid var(--border-main); margin:6px 0;"></div>
+        <a href="{{ path('app_admin_index') }}" onclick="closeMobileDrawer()"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--text-secondary); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-th" style="width:20px; text-align:center;"></i> Administration
+        </a>
+        {% endif %}
+
+        <div style="border-top:1px solid var(--border-main); margin:6px 0;"></div>
+
+        {# Logout #}
+        <a href="{{ path('app_logout') }}"
+           style="display:flex; align-items:center; gap:12px; padding:13px 20px;
+                  color:var(--accent-danger); text-decoration:none; font-size:0.9rem;">
+            <i class="fas fa-sign-out-alt" style="width:20px; text-align:center;"></i> Déconnexion
+        </a>
+    </div>
+</div>
+
+
+{# ══════════════════════════════════════════════════════════════════
+   VAULT LOCK SCREEN v2
+   ══════════════════════════════════════════════════════════════════ #}
+
+{# Pass PHP session values to JS #}
+<script>
+    window.SECURBOX_TIMEOUT_MINUTES = {{ app.session.get('settings_security_timeout', 15)|default(15) }};
+    window.SECURBOX_TIMEOUT_ACTION  = '{{ app.session.get('settings_security_action', 'lock')|default('lock') }}';
+    window.SECURBOX_UNLOCK_URL      = '{{ path('app_vault_unlock') }}';
+    window.SECURBOX_LOCK_URL        = '{{ path('app_vault_lock') }}';
+    window.SECURBOX_LOGOUT_URL      = '{{ path('app_logout') }}';
+</script>
+
+{# ── LOCK SCREEN ── #}
+<div id="vaultLockScreen" style="display:none;">
+    <div class="vls-bg"></div>
+
+    <div class="vls-card">
+        {# SecurBox brand mark #}
+        <div class="vls-brand">
+            {% include 'components/_logo.html.twig' with {size: 'sm'} %}
+               <div class="vls-brand-name">{{ app_name }}</div>
+            </div>
+
+        {# Lock icon #}
+        <div class="vls-lock-ring">
+            <i class="fas fa-lock-open" id="vlsLockIcon"></i>
+        </div>
+
+        <h2 class="vls-title">Coffre verrouillé</h2>
+        <p class="vls-sub">
+            Votre session est active. Saisissez votre<br>
+            mot de passe maître pour reprendre.
+        </p>
+
+        <form id="vlsForm" onsubmit="unlockVault(event)">
+            <div class="vls-field">
+                <div class="vls-input-wrap">
+                    <input id="vlsMasterPwd"
+                           type="password"
+                           class="vls-input"
+                           placeholder="Mot de passe maître"
+                           autocomplete="current-password">
+                    <button type="button" class="vls-eye" onclick="toggleVlsPwd()" tabindex="-1">
+                        <i class="fas fa-eye" id="vlsEyeIcon"></i>
+                    </button>
+                </div>
+                <div class="vls-error" id="vlsError"></div>
+            </div>
+
+            <button type="submit" class="vls-btn" id="vlsSubmitBtn">
+                <span id="vlsBtnText">
+                    <i class="fas fa-unlock-alt"></i>&nbsp; Déverrouiller
+                </span>
+                <span id="vlsBtnSpinner" style="display:none; align-items:center; gap:8px;">
+                    <span class="vls-spinner"></span> Vérification…
+                </span>
+            </button>
+        </form>
+
+        <a href="{{ path('app_logout') }}" class="vls-logout-link">
+            <i class="fas fa-sign-out-alt"></i> Se déconnecter
+        </a>
+    </div>
+
+</div>
+
+<style>
+/* ══════════════════════════════════════════════════════
+   LOCK SCREEN — full-page takeover, NO app visible
+   ══════════════════════════════════════════════════════ */
+#vaultLockScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;          /* above everything */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Plain gradient background — NO blur, NO app peeking through */
+.vls-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 30% 20%, rgba(48,107,255,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 75% 75%, rgba(77,212,172,0.12) 0%, transparent 55%),
+        #0a0d14;               /* solid dark — app content is HIDDEN, not blurred */
+}
+
+/* Card */
+.vls-card {
+    position: relative;
+    z-index: 1;
+    background: rgba(20, 27, 39, 0.97);
+    border: 1px solid rgba(111,191,255,0.15);
+    border-radius: 24px;
+    padding: 36px 36px 28px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow:
+        0 40px 100px rgba(0,0,0,0.7),
+        0 0 0 1px rgba(255,255,255,0.04) inset;
+    animation: vlsIn 0.35s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+@keyframes vlsIn {
+    from { transform: scale(0.9) translateY(28px); opacity: 0; }
+    to   { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+/* Brand */
+.vls-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+.vls-brand-mark {
+    width: 36px; height: 40px;
+    display: grid; place-items: center;
+    font-size: 1rem; color: #dff3ff;
+    background:
+        radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
+        linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
+    clip-path: polygon(50% 0,92% 18%,82% 82%,50% 100%,18% 82%,8% 18%);
+    box-shadow: 0 8px 20px rgba(48,107,255,0.3);
+}
+.vls-brand-name {
+    font-size: 1.1rem; font-weight: 700; color: #6fbfff; letter-spacing: 0.02em;
+}
+.vls-brand-name span { color: #4dd4ac; }
+
+/* Lock ring icon */
+.vls-lock-ring {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: rgba(248,113,113,0.1);
+    border: 2px solid rgba(248,113,113,0.25);
+    color: #f87171;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    margin: 0 auto 18px;
+    box-shadow: 0 0 0 6px rgba(248,113,113,0.06);
+}
+
+/* Text */
+.vls-title {
+    font-size: 1.25rem; font-weight: 700;
+    color: #e0e0e0; margin: 0 0 10px;
+}
+.vls-sub {
+    font-size: 0.82rem; color: #6b7280;
+    line-height: 1.6; margin: 0 0 26px;
+}
+
+/* Field */
+.vls-field { margin-bottom: 12px; text-align: left; }
+.vls-input-wrap { position: relative; }
+.vls-input {
+    width: 100%;
+    padding: 13px 46px 13px 16px;
+    background: #0f1724;
+    border: 1px solid #2a3040;
+    border-radius: 12px;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.vls-input:focus {
+    border-color: #6fbfff;
+    box-shadow: 0 0 0 3px rgba(111,191,255,0.12);
+}
+.vls-input.error {
+    border-color: #f87171;
+    box-shadow: 0 0 0 3px rgba(248,113,113,0.1);
+}
+.vls-input::placeholder { color: #374151; }
+
+.vls-eye {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #4b5563;
+    cursor: pointer; padding: 4px; font-size: 0.9rem;
+    transition: color 0.15s;
+}
+.vls-eye:hover { color: #6fbfff; }
+
+.vls-error {
+    font-size: 0.78rem; color: #f87171;
+    margin-top: 6px; min-height: 18px;
+    display: flex; align-items: center; gap: 6px;
+}
+
+/* Button */
+.vls-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #6fbfff, #4dd4ac);
+    border: none; border-radius: 12px;
+    color: #0f1117; font-weight: 700; font-size: 0.95rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
+}
+.vls-btn:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+.vls-btn:active:not(:disabled) { transform: translateY(0); }
+.vls-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.vls-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(15,17,23,0.25);
+    border-top-color: #0f1117;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block; flex-shrink: 0;
+}
+
+/* Logout link */
+.vls-logout-link {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: #4b5563; font-size: 0.8rem; text-decoration: none;
+    transition: color 0.15s;
+}
+.vls-logout-link:hover { color: #f87171; }
+
+/* Hide the sidebar and main-content when locked */
+body.vault-locked #sidebar,
+body.vault-locked #mainContent {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+</style>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   VAULT INACTIVITY LOCK SYSTEM
+   ══════════════════════════════════════════════════════════════════ */
+(function () {
+    var TIMEOUT_MS     = (window.SECURBOX_TIMEOUT_MINUTES || 15) * 60 * 1000;
+    var TIMEOUT_ACTION = window.SECURBOX_TIMEOUT_ACTION  || 'lock';
+    var lockTimer      = null;
+    var isLocked       = false;
+
+    // 0 = never lock
+    if (TIMEOUT_MS === 0) return;
+
+    function resetTimer() {
+        if (isLocked) return;
+        clearTimeout(lockTimer);
+        lockTimer = setTimeout(triggerLock, TIMEOUT_MS);
+    }
+
+    ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (ev) {
+        document.addEventListener(ev, resetTimer, { passive: true });
+    });
+
+    // Start timer on page load
+    resetTimer();
+
+    function triggerLock() {
+        if (isLocked) return;
+        if (TIMEOUT_ACTION === 'logout') {
+            window.location.href = window.SECURBOX_LOGOUT_URL;
+            return;
+        }
+        showLockScreen();
+    }
+
+    window.showLockScreen = function () {
+        if (isLocked) return;
+        isLocked = true;
+
+        // Hide app content — body class covers sidebar + mainContent via CSS
+        document.body.classList.add('vault-locked');
+
+        var screen = document.getElementById('vaultLockScreen');
+        if (screen) screen.style.display = 'flex';
+
+        // Notify server
+        fetch(window.SECURBOX_LOCK_URL, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).catch(function () {});
+
+        // Focus input
+        setTimeout(function () {
+            var inp = document.getElementById('vlsMasterPwd');
+            if (inp) inp.focus();
+        }, 80);
+    };
+
+    window._securboxSetUnlocked = function () {
+        isLocked = false;
+        document.body.classList.remove('vault-locked');
+        resetTimer();
+    };
+})();
+
+/* ── Unlock form submission ── */
+async function unlockVault(e) {
+    e.preventDefault();
+
+    var inp   = document.getElementById('vlsMasterPwd');
+    var btn   = document.getElementById('vlsSubmitBtn');
+    var errEl = document.getElementById('vlsError');
+    var txt   = document.getElementById('vlsBtnText');
+    var spin  = document.getElementById('vlsBtnSpinner');
+
+    errEl.textContent = '';
+    inp.classList.remove('error');
+    btn.disabled = true;
+    txt.style.display  = 'none';
+    spin.style.display = 'flex';
+
+    try {
+        var fd = new FormData();
+        fd.append('master_password', inp.value);
+
+        var res  = await fetch(window.SECURBOX_UNLOCK_URL, {
+            method:  'POST',
+            body:    fd,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        var data = await res.json();
+
+        if (data.ok) {
+            // Animate card out
+            var card = document.querySelector('.vls-card');
+            if (card) {
+                card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+                card.style.transform  = 'scale(0.95)';
+                card.style.opacity    = '0';
+            }
+
+            setTimeout(function () {
+                var screen = document.getElementById('vaultLockScreen');
+                if (screen) screen.style.display = 'none';
+                // Show the app again
+                if (typeof window._securboxSetUnlocked === 'function') {
+                    window._securboxSetUnlocked();
+                }
+                inp.value = '';
+                if (card) { card.style.transform = ''; card.style.opacity = ''; }
+            }, 200);
+        } else {
+            errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Mot de passe incorrect.');
+            inp.classList.add('error');
+            // Shake animation
+            inp.style.animation = 'none';
+            inp.offsetHeight; // reflow
+            inp.style.animation = 'vlsShake 0.35s ease';
+            inp.value = '';
+            inp.focus();
+        }
+    } catch (err) {
+        errEl.textContent = 'Erreur réseau. Réessayez.';
+    } finally {
+        btn.disabled = false;
+        txt.style.display  = 'flex';
+        spin.style.display = 'none';
+    }
+}
+
+function toggleVlsPwd() {
+    var inp  = document.getElementById('vlsMasterPwd');
+    var icon = document.getElementById('vlsEyeIcon');
+    if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+    inp.focus();
+}
+
+/* Shake keyframe (added dynamically so it doesn't conflict) */
+(function () {
+    var style = document.createElement('style');
+    style.textContent = '@keyframes vlsShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(4px)} }';
+    document.head.appendChild(style);
+})();
+</script>
 {% else %}
     {{ block('body') }}
 {% endif %}
@@ -1006,7 +1732,10 @@ function openVaultModal(url, title) {
     vaultModalTitle.textContent = title || 'Nouveau Secret';
     vaultModal.classList.add('open');
     document.body.style.overflow = 'hidden';
-    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    fetch(url, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    cache: 'no-store'
+})
         .then(function(r) { return r.text(); })
         .then(function(html) {
             vaultModalBody.innerHTML = html;
@@ -1035,11 +1764,17 @@ document.addEventListener('click', function(e) {
     var trigger = e.target.closest('.modal-trigger');
     if (!trigger) return;
     e.preventDefault();
+    e.stopPropagation();
+    // Ferme tous les menus ouverts
     var newMenu = document.getElementById('newMenu');
     if (newMenu) newMenu.style.display = 'none';
+    document.querySelectorAll('.custom-dropdown-menu').forEach(function(m) {
+        m.style.display = 'none';
+    });
     var url = trigger.dataset.modalUrl;
+    if (!url) return;
     var collectionId = new URLSearchParams(window.location.search).get('collection');
-    if (collectionId) {
+    if (collectionId && url.indexOf('vault/new') !== -1) {
         var u = new URL(url, window.location.origin);
         u.searchParams.set('collection', collectionId);
         url = u.toString();
@@ -1073,7 +1808,6 @@ function wireModalForm() {
                         s.textContent = old.textContent;
                         old.replaceWith(s);
                     });
-                    wireModalForm();
                 });
             }
         })
@@ -1089,14 +1823,19 @@ function showInlineFlash(message, type) {
     document.body.appendChild(el);
     setTimeout(function() { el.remove(); }, 3000);
 }
-/* ══ NOTIFICATIONS ══ */
+//* ══ NOTIFICATIONS ══ */
+let _notifData     = [];
+let _notifFilter   = 'all';
+let _notifLoaded   = false;
+
 function toggleNotifications() {
-    const panel = document.getElementById('notifPanel');
+    const panel    = document.getElementById('notifPanel');
     const userMenu = document.getElementById('userMenu');
-    const newMenu = document.getElementById('newMenu');
+    const newMenu  = document.getElementById('newMenu');
     if (userMenu) userMenu.style.display = 'none';
-    if (newMenu) newMenu.style.display = 'none';
-    if (!panel) return;
+    if (newMenu)  newMenu.style.display  = 'none';
+    if (!panel)   return;
+
     const isOpen = panel.style.display !== 'none';
     panel.style.display = isOpen ? 'none' : 'block';
     if (!isOpen) loadNotifications();
@@ -1105,30 +1844,137 @@ function toggleNotifications() {
 function loadNotifications() {
     const body = document.getElementById('notifBody');
     if (!body) return;
-    body.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>';
+    body.innerHTML = '<div style="padding:28px; text-align:center; color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-spinner fa-spin" style="font-size:1.2rem; margin-bottom:8px; display:block;"></i>Chargement...</div>';
+
     fetch('/notifications', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(r => r.json())
         .then(data => {
+            _notifData   = data.notifications || [];
+            _notifLoaded = true;
             updateNotifBadge(data.count);
-            if (!data.notifications || data.notifications.length === 0) {
-                body.innerHTML = '<div style="padding:24px 16px; text-align:center; color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-check-circle" style="font-size:1.5rem; display:block; margin-bottom:8px; color:var(--accent-teal);"></i>Tout est en ordre !</div>';
-                return;
-            }
-            body.innerHTML = data.notifications.map(n => `
-                <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border-subtle); transition:background 0.12s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
-                    <div style="width:32px; height:32px; border-radius:8px; background:${n.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.85rem; color:${n.color};">
-                        <i class="${n.icon}"></i>
-                    </div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.85rem; color:var(--text-primary); font-weight:500; margin-bottom:2px;">${n.title}</div>
-                        <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;">${n.message}</div>
-                    </div>
-                </div>
-            `).join('');
+            // Update unread tab count
+            const ub = document.getElementById('filterUnreadCount');
+            if (ub) ub.textContent = data.count > 0 ? `(${data.count})` : '';
+            renderNotifications();
         })
         .catch(() => {
-            body.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.85rem;">Erreur de chargement</div>';
+            body.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;">Erreur de chargement</div>';
         });
+}
+
+function renderNotifications() {
+    const body = document.getElementById('notifBody');
+    if (!body) return;
+
+    const list = _notifFilter === 'unread'
+        ? _notifData.filter(n => n.unread)
+        : _notifData;
+
+    if (list.length === 0) {
+        body.innerHTML = `
+            <div style="padding:40px 20px; text-align:center; color:var(--text-muted);">
+                <i class="fas fa-check-circle" style="font-size:2rem; color:var(--accent-teal); display:block; margin-bottom:12px;"></i>
+                <div style="font-size:0.88rem; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">
+                    ${_notifFilter === 'unread' ? 'Aucune notification non lue' : 'Aucune notification'}
+                </div>
+                <div style="font-size:0.78rem;">Tout est en ordre !</div>
+            </div>`;
+        return;
+    }
+
+    body.innerHTML = list.map(n => `
+        <div onclick="handleNotifClick('${n.id}', '${n.link}')"
+             style="display:flex; align-items:flex-start; gap:12px; padding:14px 16px;
+                    border-bottom:1px solid var(--border-subtle); cursor:pointer;
+                    transition:background 0.12s; position:relative;
+                    background:${n.unread ? 'rgba(111,191,255,0.04)' : 'transparent'};"
+             onmouseenter="this.style.background='var(--bg-hover)'"
+             onmouseleave="this.style.background='${n.unread ? 'rgba(111,191,255,0.04)' : 'transparent'}'">
+
+            <!-- Icon -->
+            <div style="width:38px; height:38px; border-radius:10px; flex-shrink:0;
+                        background:${n.bg}; display:flex; align-items:center; justify-content:center;
+                        font-size:0.92rem; color:${n.color}; margin-top:2px;">
+                <i class="${n.icon}"></i>
+            </div>
+
+            <!-- Content -->
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:3px;">
+                    <span style="font-size:0.85rem; font-weight:${n.unread ? '700' : '600'};
+                                 color:var(--text-primary); line-height:1.3;">
+                        ${n.title}
+                    </span>
+                    ${n.unread ? '<span style="width:8px; height:8px; border-radius:50%; background:#6fbfff; flex-shrink:0; margin-top:4px;"></span>' : ''}
+                </div>
+                <div style="font-size:0.80rem; color:var(--text-secondary); margin-bottom:4px; line-height:1.4;">
+                    ${n.message}
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.3;">
+                    ${n.detail}
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:5px; display:flex; align-items:center; gap:4px;">
+                    <i class="far fa-clock" style="font-size:0.65rem;"></i>
+                    ${n.relative} · ${n.date}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function handleNotifClick(id, link) {
+    // Mark as read
+    fetch('/notifications/mark-one-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: 'id=' + encodeURIComponent(id)
+    });
+    // Update local state
+    const n = _notifData.find(x => x.id === id);
+    if (n) n.unread = false;
+    updateNotifBadge(_notifData.filter(x => x.unread).length);
+    const ub = document.getElementById('filterUnreadCount');
+    const unreadCount = _notifData.filter(x => x.unread).length;
+    if (ub) ub.textContent = unreadCount > 0 ? `(${unreadCount})` : '';
+    renderNotifications();
+    // Navigate
+    if (link) {
+        document.getElementById('notifPanel').style.display = 'none';
+        window.location.href = link;
+    }
+}
+
+function markAllRead() {
+    const ids = _notifData.map(n => n.id);
+    const body = ids.map(id => `ids[]=${encodeURIComponent(id)}`).join('&');
+
+    fetch('/notifications/mark-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: body
+    }).then(() => {
+        _notifData.forEach(n => n.unread = false);
+        updateNotifBadge(0);
+        const ub = document.getElementById('filterUnreadCount');
+        if (ub) ub.textContent = '';
+        renderNotifications();
+    });
+}
+function setNotifFilter(filter) {
+    _notifFilter = filter;
+    const btnAll    = document.getElementById('filterAll');
+    const btnUnread = document.getElementById('filterUnread');
+    if (filter === 'all') {
+        if (btnAll)    { btnAll.style.background = 'var(--accent-blue)'; btnAll.style.color = '#0f1117'; btnAll.style.border = 'none'; }
+        if (btnUnread) { btnUnread.style.background = 'transparent'; btnUnread.style.color = 'var(--text-secondary)'; btnUnread.style.border = '1px solid var(--border-input)'; }
+    } else {
+        if (btnUnread) { btnUnread.style.background = 'var(--accent-blue)'; btnUnread.style.color = '#0f1117'; btnUnread.style.border = 'none'; }
+        if (btnAll)    { btnAll.style.background = 'transparent'; btnAll.style.color = 'var(--text-secondary)'; btnAll.style.border = '1px solid var(--border-input)'; }
+    }
+    renderNotifications();
 }
 
 function updateNotifBadge(count) {
@@ -1138,13 +1984,44 @@ function updateNotifBadge(count) {
     badge.style.display = count > 0 ? 'flex' : 'none';
 }
 
+// Close on outside click
 document.addEventListener('click', function(e) {
-    const panel = document.getElementById('notifPanel');
+    const panel  = document.getElementById('notifPanel');
+    const btn    = document.getElementById('notifBtn');
     if (panel && panel.style.display !== 'none') {
-        if (!e.target.closest('#notifPanel') && !e.target.closest('[onclick="toggleNotifications()"]')) {
+        if (!e.target.closest('#notifPanel') && !e.target.closest('#notifBtn')) {
             panel.style.display = 'none';
         }
     }
+});
+/* ══ MOBILE DRAWER ══ */
+function toggleMobileDrawer() {
+    var drawer  = document.getElementById('mobileDrawer');
+    var overlay = document.getElementById('mobileDrawerOverlay');
+    if (!drawer) return;
+    var isOpen = drawer.classList.contains('open');
+    drawer.classList.toggle('open', !isOpen);
+    overlay.classList.toggle('open', !isOpen);
+    document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+
+function closeMobileDrawer() {
+    var drawer  = document.getElementById('mobileDrawer');
+    var overlay = document.getElementById('mobileDrawerOverlay');
+    if (!drawer) return;
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+}
+// ════════ AUTOMATIC FLASH ALERTS DISMISSAL (INSTANT AT 5 SECONDS) ════════
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert, .sb-flash');
+    alerts.forEach(function(alert) {
+        setTimeout(function() {
+            // Remove from DOM instantly without waiting for animations
+            alert.remove();
+        }, 3000);
+    });
 });
 </script>
 </body>

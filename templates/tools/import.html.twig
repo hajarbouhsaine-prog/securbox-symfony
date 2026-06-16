@@ -1,35 +1,235 @@
 {% extends 'base.html.twig' %}
-{% block title %}Import{% endblock %}
+{% block title %}Importer des secrets{% endblock %}
 {% block body %}
-<h1>Import</h1>
-<div style="max-width:900px;">
-    <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:12px; padding:18px;">
-        <form method="post" enctype="multipart/form-data">
-            <div style="margin-bottom:12px;">
-                <label class="form-label">Vault (required)</label>
-                <select name="vault" class="form-select">
-                    {% for col in collections %}
-                    <option value="{{ col.id }}">{{ col.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="margin-bottom:12px;">
-                <label class="form-label">File format</label>
-                <select name="format" class="form-select">
-                    <option value="json">.json</option>
-                    <option value="csv">.csv</option>
-                </select>
-            </div>
-            <div style="margin-bottom:12px;">
-                <label class="form-label">Select the import file</label>
-                <input type="file" name="import_file" class="form-control" />
-            </div>
-            <div style="margin-bottom:12px;">
-                <label class="form-label">or copy/paste the import file contents</label>
-                <textarea name="paste" class="form-control" rows="6"></textarea>
-            </div>
-            <button class="btn btn-primary" type="submit">Import</button>
-        </form>
+
+<div class="sb-settings">
+
+    <div class="sb-hero">
+        <div class="sb-hero__left">
+
+            <h1 class="sb-hero__title">Importer des secrets</h1>
+            <p class="sb-hero__sub">Importez vos secrets (JSON ou CSV).</p>
+        </div>
     </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="sb-flash sb-flash--{{ label == 'error' ? 'danger' : 'success' }}">
+                <i class="fas fa-{{ label == 'error' ? 'exclamation-circle' : 'check-circle' }}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="import-grid">
+
+        {# ── Formulaire principal ── #}
+        <div class="sb-section">
+            <h2 class="sb-section__title">
+                <i class="fas fa-file-import" style="color:var(--accent-blue);"></i>
+                Charger un fichier
+            </h2>
+            <p class="sb-section__desc">
+                Fichiers acceptés : export <strong>.json</strong> ou <strong>.csv</strong>. Taille max : 5 Mo.
+            </p>
+
+            <form method="post"
+                  action="{{ path('tools_import') }}"
+                  enctype="multipart/form-data"
+                  id="importForm"
+                  novalidate>
+
+                <input type="hidden" name="_token" value="{{ csrf_token('tools_import') }}">
+
+                {# Fichier #}
+                <div class="sb-field">
+                    <label for="import_file">Fichier JSON ou CSV <span class="sb-required">*</span></label>
+                    <div class="file-drop-zone" id="dropZone">
+                        <input type="file" name="import_file" id="import_file"
+                               accept=".json,.csv" class="file-input-hidden">
+                        <div class="file-drop-inner" id="dropInner">
+                            <i class="fas fa-cloud-upload-alt" style="font-size:2rem; color:var(--accent-blue); margin-bottom:10px;"></i>
+                            <p style="margin:0; color:var(--text-primary); font-weight:500;">Glissez-déposez votre fichier ici</p>
+                            <p style="margin:4px 0 12px; font-size:0.82rem; color:var(--text-muted);">ou</p>
+                            <label for="import_file" class="sb-btn sb-btn--secondary" style="cursor:pointer;">
+                                <i class="fas fa-folder-open"></i> Choisir un fichier
+                            </label>
+                        </div>
+                        <div class="file-selected" id="fileSelected" style="display:none;">
+                            <i class="fas fa-file-code" style="font-size:1.5rem; color:var(--accent-teal);"></i>
+                            <div>
+                                <div id="fileName" style="font-weight:500; color:var(--text-primary);"></div>
+                                <div id="fileSize" style="font-size:0.78rem; color:var(--text-muted);"></div>
+                            </div>
+                            <button type="button" onclick="clearFile()"
+                                    style="margin-left:auto; background:none; border:none; color:var(--accent-danger); cursor:pointer; font-size:1rem;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <span class="sb-field__err" id="fileErr"></span>
+                </div>
+
+                {# Collection cible #}
+                <div class="sb-field">
+                    <label for="collection_id">Collection de destination <span style="color:var(--text-muted); font-weight:400;">(optionnel)</span></label>
+                    <select id="collection_id" name="collection_id" class="sb-input">
+                        <option value="">— Aucune collection (racine) —</option>
+                        {% for col in collections %}
+                            <option value="{{ col.id }}">{{ col.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; display:block;">
+                        Si sélectionnée, elle remplace la collection d'origine du fichier.
+                    </span>
+                </div>
+
+                {# Mot de passe maître #}
+                <div class="sb-field">
+                    <label for="master_password">Mot de passe maître <span class="sb-required">*</span></label>
+                    <div class="sb-input-wrap">
+                        <input id="master_password" name="master_password"
+                               type="password" class="sb-input"
+                               placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="sb-eye" onclick="togglePwd('master_password', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; display:block;">
+                        Utilisé pour chiffrer les secrets avant de les stocker.
+                    </span>
+                    <span class="sb-field__err" id="pwdErr"></span>
+                </div>
+
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+                    <button type="submit" class="sb-btn sb-btn--primary" id="submitBtn">
+                        <i class="fas fa-file-import"></i> Importer
+                    </button>
+                    <a href="{{ path('app_vault_index') }}" class="sb-btn sb-btn--secondary">
+                        <i class="fas fa-arrow-left"></i> Retour au coffre
+                    </a>
+                </div>
+            </form>
+        </div>
+
+    </div>{# /import-grid #}
 </div>
+
+<style>
+.import-grid {
+    display: flex;
+    justify-content: center;
+}
+.import-grid > .sb-section {
+    width: 100%;
+    max-width: 640px;
+}
+
+/* Drop zone */
+.file-drop-zone {
+    border: 2px dashed var(--border-input);
+    border-radius: 12px;
+    background: var(--bg-input);
+    transition: border-color 0.15s, background 0.15s;
+    overflow: hidden;
+}
+.file-drop-zone.drag-over {
+    border-color: var(--accent-blue);
+    background: var(--bg-active);
+}
+.file-drop-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    text-align: center;
+}
+.file-input-hidden {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0; height: 0;
+}
+.file-selected {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: rgba(77,212,172,0.08);
+    border-top: 1px solid rgba(77,212,172,0.2);
+}
+</style>
+
+<script>
+function togglePwd(id, btn) {
+    const inp = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') { inp.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+    else { inp.type = 'password'; icon.className = 'fas fa-eye'; }
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+}
+
+function showFile(file) {
+    document.getElementById('dropInner').style.display = 'none';
+    document.getElementById('fileSelected').style.display = 'flex';
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatBytes(file.size);
+    document.getElementById('fileErr').textContent = '';
+}
+
+function clearFile() {
+    document.getElementById('import_file').value = '';
+    document.getElementById('dropInner').style.display = 'flex';
+    document.getElementById('fileSelected').style.display = 'none';
+}
+
+document.getElementById('import_file').addEventListener('change', function() {
+    if (this.files[0]) showFile(this.files[0]);
+});
+
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.json') && !file.name.endsWith('.csv')) {
+        document.getElementById('fileErr').textContent = 'Seuls les fichiers .json et .csv sont acceptés.';
+        return;
+    }
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('import_file').files = dt.files;
+    showFile(file);
+});
+
+document.getElementById('importForm').addEventListener('submit', function(e) {
+    let ok = true;
+    document.getElementById('fileErr').textContent = '';
+    document.getElementById('pwdErr').textContent = '';
+
+    if (!document.getElementById('import_file').files[0]) {
+        document.getElementById('fileErr').textContent = 'Veuillez sélectionner un fichier.';
+        ok = false;
+    }
+    if (!document.getElementById('master_password').value.trim()) {
+        document.getElementById('pwdErr').textContent = 'Mot de passe maître requis.';
+        ok = false;
+    }
+    if (!ok) { e.preventDefault(); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Import en cours…';
+});
+</script>
+
 {% endblock %}

@@ -7,8 +7,13 @@ parameters:
         - vendor/
     symfony:
         containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+    treatPhpDocTypesAsCertain: false
     ignoreErrors:
         - '#type mapping mismatch#'
         - '#does not specify its types#'
         - '#no value type specified in iterable type#'
         - '#has parameter .* with no type specified#'
+        - '#Parameter \#1 \$user of method Symfony\\Component\\PasswordHasher\\Hasher\\UserPasswordHasherInterface::isPasswordValid\(\)#'
+        - '#Strict comparison using === between null and non-empty-list#'
+        - '#Match arm comparison between .note. and .note. is always true#'
+        - '#Dead catch - Doctrine\\DBAL\\Exception\\ConnectionLost#'

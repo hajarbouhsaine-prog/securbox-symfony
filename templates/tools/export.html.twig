@@ -1,29 +1,206 @@
 {% extends 'base.html.twig' %}
-{% block title %}Export{% endblock %}
+{% block title %}Exporter des secrets{% endblock %}
 {% block body %}
-<h1>Export</h1>
-<div style="max-width:900px;">
-    <div style="background:#161b27; border:1px solid #2a2f3e; border-radius:12px; padding:18px;">
-        <form method="post">
-            <div style="margin-bottom:12px;">
-                <label class="form-label">Export from (required)</label>
-                <select name="vault" class="form-select">
-                    <option value="all">My vault</option>
-                    {% for col in collections %}
-                    <option value="col_{{ col.id }}">{{ col.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="margin-bottom:12px;">
-                <label class="form-label">Format</label>
-                <select name="format" class="form-select">
-                    <option value="json">.json</option>
-                    <option value="csv">.csv</option>
-                    <option value="zip">.zip (with attachments)</option>
-                </select>
-            </div>
-            <button class="btn btn-primary" type="submit">Export</button>
-        </form>
+
+<div class="sb-settings">
+
+    <div class="sb-hero">
+        <div class="sb-hero__left">
+
+            <h1 class="sb-hero__title">Exporter des secrets</h1>
+            <p class="sb-hero__sub">Téléchargez une sauvegarde de vos secrets en choisissant le format souhaité.</p>
+        </div>
     </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="sb-flash sb-flash--{{ label == 'error' ? 'danger' : 'success' }}">
+                <i class="fas fa-{{ label == 'error' ? 'exclamation-circle' : 'check-circle' }}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="export-grid">
+
+        {# ── Formulaire principal ── #}
+        <div class="sb-section">
+            <h2 class="sb-section__title">
+                <i class="fas fa-file-export" style="color:var(--accent-blue);"></i>
+                Options d'export
+            </h2>
+
+            <form method="post" action="{{ path('tools_export') }}" id="exportForm" novalidate>
+                <input type="hidden" name="_token" value="{{ csrf_token('tools_export') }}">
+
+                {# Format d'export #}
+                <div class="sb-field">
+                    <label for="format">Format de fichier</label>
+                    <select id="format" name="format" class="sb-input">
+                        <option value="json">.json (déchiffré — réimportable dans SecurBox)</option>
+                        <option value="csv">.csv (tableau, déchiffré)</option>
+                        <option value="json_encrypted">.json (chiffré — sauvegarde brute)</option>
+                    </select>
+                    <span style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; display:block;" id="formatHint">
+                        Contient vos secrets en clair, structurés pour être réimportés.
+                    </span>
+                </div>
+
+                {# Filtrer par collection #}
+                <div class="sb-field">
+                    <label for="collection_id">Exporter une collection spécifique <span style="color:var(--text-muted); font-weight:400;">(optionnel)</span></label>
+                    <select id="collection_id" name="collection_id" class="sb-input">
+                        <option value="">— Tous les secrets —</option>
+                        {% for col in collections %}
+                            <option value="{{ col.id }}">{{ col.name }} ({{ col.secrets|length }} secret(s))</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# Mot de passe maître #}
+                <div class="sb-field">
+                    <label for="master_password">Mot de passe maître <span class="sb-required">*</span></label>
+                    <div class="sb-input-wrap">
+                        <input id="master_password" name="master_password"
+                               type="password" class="sb-input"
+                               placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="sb-eye" onclick="togglePwd('master_password', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; display:block;">
+                        Requis pour déchiffrer vos secrets avant l'export.
+                    </span>
+                    <span class="sb-field__err" id="pwdErr"></span>
+                </div>
+
+                {# Avertissement sécurité #}
+                <div class="security-warning">
+                    <i class="fas fa-exclamation-triangle" style="color:var(--accent-warn); flex-shrink:0;"></i>
+                    <div>
+                        <strong style="color:var(--accent-warn);">Attention</strong> — Le fichier exporté contient vos secrets <strong>en clair</strong>.
+                        Stockez-le dans un endroit sûr et supprimez-le après utilisation.
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:20px;">
+                    <button type="submit" class="sb-btn sb-btn--primary" id="exportBtn">
+                        <i class="fas fa-download"></i> Télécharger l'export
+                    </button>
+                    <a href="{{ path('app_vault_index') }}" class="sb-btn sb-btn--secondary">
+                        <i class="fas fa-arrow-left"></i> Retour au coffre
+                    </a>
+                </div>
+            </form>
+        </div>
+
+
+
+    </div>{# /export-grid #}
 </div>
+
+<style>
+.export-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 860px) {
+    .export-grid { grid-template-columns: 1fr; }
+}
+
+/* Format selector */
+.format-selector { display: flex; flex-direction: column; gap: 10px; }
+.format-option { cursor: pointer; }
+.format-option input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+.format-option__body {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 12px;
+    border: 2px solid var(--border-input);
+    background: var(--bg-input);
+    transition: border-color 0.15s, background 0.15s;
+}
+.format-option:hover .format-option__body {
+    border-color: var(--accent-blue);
+    background: var(--bg-hover);
+}
+.format-option input:checked + .format-option__body {
+    border-color: var(--accent-blue);
+    background: var(--bg-active);
+}
+.format-option__icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+}
+.format-option__title { font-weight: 600; font-size: 0.92rem; color: var(--text-primary); }
+.format-option__desc  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+.format-check {
+    margin-left: auto; color: var(--accent-blue);
+    font-size: 1.1rem; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.15s;
+}
+.format-option input:checked + .format-option__body .format-check { opacity: 1; }
+
+/* Security warning */
+.security-warning {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px; border-radius: 10px;
+    border: 1px solid rgba(251,191,36,0.3);
+    background: rgba(251,191,36,0.06);
+    font-size: 0.87rem; color: var(--text-secondary);
+    line-height: 1.55;
+    margin-top: 8px;
+}
+
+/* Type list */
+.type-list { display: flex; flex-direction: column; gap: 8px; }
+.type-item { display: flex; align-items: center; gap: 10px; font-size: 0.87rem; color: var(--text-secondary); }
+
+/* Diff table */
+.diff-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.diff-table th { text-align: center; padding: 6px 8px; font-weight: 600; border-bottom: 1px solid var(--border-input); }
+.diff-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+.diff-table td:first-child { color: var(--text-primary); font-size: 0.82rem; }
+.diff-table td:not(:first-child) { text-align: center; }
+.diff-table tr:last-child td { border-bottom: none; }
+</style>
+
+<script>
+function togglePwd(id, btn) {
+    const inp = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') { inp.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+    else { inp.type = 'password'; icon.className = 'fas fa-eye'; }
+}
+
+document.getElementById('format').addEventListener('change', function() {
+    const hint = document.getElementById('formatHint');
+    const hints = {
+        json: 'Contient vos secrets en clair, structurés pour être réimportés.',
+        csv: 'Tableau en clair (Excel, LibreOffice…), une ligne par secret.',
+        json_encrypted: 'Vos secrets restent chiffrés tels qu\'en base — réimportable uniquement avec ce même compte.',
+    };
+    hint.textContent = hints[this.value] || '';
+});
+
+document.getElementById('exportForm').addEventListener('submit', function(e) {
+    document.getElementById('pwdErr').textContent = '';
+    if (!document.getElementById('master_password').value.trim()) {
+        document.getElementById('pwdErr').textContent = 'Mot de passe maître requis.';
+        e.preventDefault();
+        return;
+    }
+    const btn = document.getElementById('exportBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Export en cours…';
+    // Le formulaire déclenche un téléchargement → on réactive le bouton après un délai
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-download"></i> Télécharger l\'export';
+    }, 3000);
+});
+</script>
+
 {% endblock %}

@@ -26,3 +26,5 @@
 /node_modules/
 /.php-cs-fixer.cache
 /.secrets.baseline
+certs/
+typescript

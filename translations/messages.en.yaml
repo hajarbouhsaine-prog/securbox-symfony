@@ -1,0 +1,27 @@
+# translations/messages.en.yaml
+nav:
+    vaults: Vaults
+    tools: Tools
+    settings: Settings
+    account: My account
+    security: Security
+    appearance: Appearance
+    password_manager: Password manager # pragma: allowlist secret
+    admin: Admin console
+
+appearance:
+    hero_title: Customize your interface
+    hero_sub: "Theme, language and display preferences."
+    theme_title: Theme
+    theme_desc: "Choose the visual appearance of your vault."
+    theme_dark: Dark
+    theme_light: Light
+    theme_system: System
+    lang_title: Language
+    lang_desc: "Select the display language of the application."
+    display_title: "Display options"
+    display_desc: "Adjust how your secrets are rendered."
+    icons_title: "Website icons"
+    icons_desc: "Shows the favicon (small icon) of the website linked to each <strong>Password</strong> secret. When enabled, the icon is loaded from the site's domain. When disabled, a generic icon is shown instead."
+    mask_title: "Mask passwords by default"
+    save_btn: "Save preferences"

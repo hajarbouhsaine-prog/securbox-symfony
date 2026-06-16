@@ -67,4 +67,26 @@ class EncryptionService
 
         return $decrypted;
     }
+
+    public function encryptWithAppSecret(string $data, string $appSecret): array
+    {
+        $key = sodium_crypto_generichash(
+            $appSecret,
+            '',
+            SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES
+        );
+
+        return $this->encrypt($data, $key);
+    }
+
+    public function decryptWithAppSecret(string $encryptedData, string $iv, string $appSecret): string
+    {
+        $key = sodium_crypto_generichash(
+            $appSecret,
+            '',
+            SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES
+        );
+
+        return $this->decrypt($encryptedData, $iv, $key);
+    }
 }
