@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+
+  # ─── Application PHP/Symfony ───────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        user: symfony
+        uid: 1000
+    container_name: securbox_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    environment:
+      - APP_ENV=prod
+      - APP_SECRET=${APP_SECRET}
+      - DATABASE_URL=mysql://${DB_USER}:${DB_PASSWORD}@db:3306/${DB_NAME}?serverVersion=8.0&charset=utf8mb4
+      - SODIUM_ENCRYPTION_KEY=${SODIUM_ENCRYPTION_KEY}
+    networks:
+      - securbox_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ─── Serveur Web Nginx ─────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: securbox_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - securbox_network
+    depends_on:
+      - app
+
+  # ─── Base de données MySQL ─────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: securbox_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"       # 3307 côté hôte pour éviter les conflits avec XAMPP
+    volumes:
+      - securbox_mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - securbox_network
+
+  # ─── phpMyAdmin (optionnel, pratique pour le superviseur) ─────────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: securbox_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    networks:
+      - securbox_network
+    depends_on:
+      - db
+
+# ─── Volumes persistants ───────────────────────────────────────────────────
+volumes:
+  securbox_mysql_data:
+    driver: local
+
+# ─── Réseau interne ────────────────────────────────────────────────────────
+networks:
+  securbox_network:
+    driver: bridge
