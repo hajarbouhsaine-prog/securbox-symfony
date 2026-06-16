@@ -59,7 +59,7 @@ RUN composer dump-autoload --optimize
 RUN if [ -f "package.json" ]; then npm install && npm run build; fi
 
 # Permissions correctes pour Symfony
-RUN chown -R $user:www-data /var/www && \
+RUN mkdir -p /var/www/var && chown -R $user:www-data /var/www && \
     chmod -R 775 /var/www/var
 
 USER $user
