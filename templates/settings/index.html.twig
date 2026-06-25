@@ -25,19 +25,8 @@
             <p class="sb-hero__sub"></p>
         </div>
     </div>
-        <div class="sb-profile-card sb-profile-card--hero">
-            <div class="sb-profile-card__top">
-                <div class="sb-avatar">{{ app.user.email|first|upper }}</div>
-                <div>
-                    <div class="sb-profile-card__name">{{ app.user.email|split('@')[0]|capitalize }}</div>
-                    <div class="sb-profile-card__email">{{ app.user.email }}</div>
-                </div>
-            </div>
-            <div class="sb-profile-card__actions">
-                <button type="button" class="sb-btn sb-btn--ghost">Personnaliser</button>
-            </div>
-        </div>
-    </div>
+
+
 
     {# ══════════════════════════════════════════
        SECTION 1 — Informations générales (Nom)
@@ -46,26 +35,24 @@
         <form method="post" action="{{ path('app_settings') }}" id="formName" novalidate>
             <input type="hidden" name="action" value="update_name">
 
-            <div class="sb-section__row">
-                <div class="sb-field sb-field--inline">
-                    <label for="profile_name">Nom</label>
-                    <input id="profile_name" name="new_name" type="text" class="sb-input"
-                           value="{{ app.user.email|split('@')[0]|capitalize }}" required>
-                    <span class="sb-field__err" id="nameErr"></span>
-                </div>
+            <div style="display:flex; flex-direction:row; align-items:flex-end; gap:1rem; flex-wrap:wrap;">
+    <div style="display:flex; flex-direction:column; flex:1; min-width:180px;">
+        <label for="profile_name" style="margin-bottom:6px;">Nom</label>
+        <input id="profile_name" name="new_name" type="text" class="sb-input"
+               value="{{ app.user.email|split('@')[0]|capitalize }}" required>
+        <span class="sb-field__err" id="nameErr"></span>
+    </div>
 
-                <div class="sb-field sb-field--inline">
-                    <label for="profile_email_display">Email</label>
-                    <input id="profile_email_display" type="email" class="sb-input"
-                           value="{{ app.user.email }}" readonly>
-                </div>
+    <div style="display:flex; flex-direction:column; flex:1; min-width:180px;">
+        <label for="profile_email_display" style="margin-bottom:6px;">Email</label>
+        <input id="profile_email_display" type="email" class="sb-input"
+               value="{{ app.user.email }}" readonly>
+    </div>
 
-                <div class="sb-section__action">
-                    <button type="submit" class="sb-btn sb-btn--primary">
-                        <i class="fas fa-save"></i> Enregistrer
-                    </button>
-                </div>
-            </div>
+    <button type="submit" class="sb-btn sb-btn--primary" style="flex-shrink:0; margin-bottom:0; align-self:flex-end;">
+        <i class="fas fa-save"></i> Enregistrer
+    </button>
+</div>
         </form>
     </div>
 

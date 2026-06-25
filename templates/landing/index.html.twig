@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0f1117;
@@ -23,6 +24,13 @@
             backdrop-filter: blur(12px);
             border-bottom: 1px solid #2a2f3e;
             padding: 14px 0;
+            animation: fadeInDown 0.7s ease both;
+            transition: padding 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        }
+        .landing-nav.is-scrolled {
+            padding: 8px 0;
+            background: rgba(15, 17, 23, 0.96);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
         }
         .landing-nav .container {
             display: flex;
@@ -42,6 +50,35 @@
             font-size: 0.9rem; transition: color 0.2s;
         }
         .nav-links a:hover { color: #e0e0e0; }
+
+        /* ── BRAND / LOGO (navbar + footer share this) ── */
+        .brand-link { text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        .logo-orb { position: relative; width: 42px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .logo-orb::before {
+            content: "";
+            position: absolute; inset: -9px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(111,191,255,0.4), transparent 72%);
+            animation: pulseGlow 3.2s ease-in-out infinite;
+            will-change: transform, opacity;
+        }
+        .logo-orb.is-small { width: 34px; height: 38px; }
+        .logo-orb.is-small::before { inset: -7px; }
+        .logo-img, .logo-shield { position: relative; z-index: 1; width: 42px; height: 48px; flex-shrink: 0; }
+        .logo-img { object-fit: contain; }
+        .logo-shield {
+            display: grid; place-items: center;
+            color: #dff3ff; font-size: 1.15rem;
+            background: radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
+                        linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
+            clip-path: polygon(50% 0, 92% 18%, 82% 82%, 50% 100%, 18% 82%, 8% 18%);
+            box-shadow: 0 12px 30px rgba(48,107,255,0.28), inset 0 0 0 2px rgba(255,255,255,0.18);
+        }
+        .logo-img.is-small, .logo-shield.is-small { width: 34px; height: 38px; font-size: 0.95rem; box-shadow: 0 8px 20px rgba(48,107,255,0.28); }
+        .brand-name { font-size: 1.3rem; font-weight: 700; color: var(--brand-primary, #6fbfff); line-height: 1; }
+        .brand-slogan { color: #6b7280; font-size: 0.75rem; margin-top: 2px; }
+        .brand-name.is-small { font-size: 1.1rem; }
+        .brand-slogan.is-small { font-size: 0.72rem; }
         .nav-cta {
             display: flex; gap: 12px; align-items: center;
         }
@@ -57,7 +94,17 @@
             text-decoration: none; padding: 8px 20px;
             border-radius: 8px; font-size: 0.9rem;
             transition: opacity 0.2s;
+            position: relative; overflow: hidden;
         }
+        .btn-nav-register::before {
+            content: "";
+            position: absolute; top: 0; left: -60%;
+            width: 45%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.55s ease;
+        }
+        .btn-nav-register:hover::before { left: 130%; }
         .btn-nav-register:hover { opacity: 0.88; color: #0f1117; }
 
         /* ── HERO ── */
@@ -73,9 +120,52 @@
         }
         .hero-bg {
             position: absolute; inset: 0; z-index: 0;
+            overflow: hidden;
             background: radial-gradient(ellipse 60% 60% at 50% 30%, rgba(111,191,255,0.15) 0%, transparent 70%),
                         radial-gradient(ellipse 50% 50% at 50% 70%, rgba(77,212,172,0.08) 0%, transparent 60%);
         }
+
+        /* ── VAULT DECORATION (signature hero element) ── */
+        .vault-dial {
+            position: absolute; top: 50%; left: 50%;
+            width: 760px; height: 760px; margin: -380px;
+            border-radius: 50%;
+            background: repeating-conic-gradient(rgba(111,191,255,0.14) 0deg 1.6deg, transparent 1.6deg 10deg);
+            -webkit-mask: radial-gradient(circle, transparent 56%, #000 58%, #000 63%, transparent 65%);
+                    mask: radial-gradient(circle, transparent 56%, #000 58%, #000 63%, transparent 65%);
+            animation: rotateSlow 110s linear infinite;
+            will-change: transform;
+        }
+        .vault-dial--inner {
+            width: 540px; height: 540px; margin: -270px;
+            background: repeating-conic-gradient(rgba(77,212,172,0.18) 0deg 2deg, transparent 2deg 14deg);
+            -webkit-mask: radial-gradient(circle, transparent 48%, #000 51%, #000 58%, transparent 61%);
+                    mask: radial-gradient(circle, transparent 48%, #000 51%, #000 58%, transparent 61%);
+            animation: rotateSlow 75s linear infinite reverse;
+        }
+        .vault-core {
+            position: absolute; top: 50%; left: 50%;
+            width: 170px; height: 170px; margin: -85px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(111,191,255,0.42), rgba(77,212,172,0.18) 55%, transparent 76%);
+            filter: blur(1px);
+            animation: pulseGlow 4.5s ease-in-out infinite;
+        }
+        .vault-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+        .ambient-icons { position: absolute; inset: 0; overflow: hidden; }
+        .ambient-icon {
+            position: absolute; bottom: -60px;
+            color: rgba(111,191,255,0.18);
+            font-size: 1.3rem;
+            animation: floatUp 16s linear infinite;
+        }
+        .ambient-icon.i1 { left: 8%;  font-size: 1rem;   color: rgba(77,212,172,0.18);  animation-delay: 0s; }
+        .ambient-icon.i2 { left: 22%; font-size: 1.5rem;                                 animation-delay: 3.2s; }
+        .ambient-icon.i3 { left: 40%; font-size: 0.95rem; color: rgba(192,132,252,0.16); animation-delay: 6.4s; }
+        .ambient-icon.i4 { left: 60%; font-size: 1.25rem;                                animation-delay: 2.1s; }
+        .ambient-icon.i5 { left: 76%; font-size: 1rem;   color: rgba(77,212,172,0.16);  animation-delay: 9s; }
+        .ambient-icon.i6 { left: 90%; font-size: 1.4rem;                                 animation-delay: 5s; }
+
         .hero .container { position: relative; z-index: 1; max-width: 900px; }
 
         .hero-badge {
@@ -84,6 +174,7 @@
             color: #6fbfff; font-size: 0.82rem; font-weight: 600;
             padding: 6px 14px; border-radius: 20px; margin-bottom: 24px;
             letter-spacing: 0.03em;
+            animation: scaleIn 0.6s ease 0.1s both, badgePulse 2.8s ease-in-out 0.9s infinite;
         }
 
         .hero h1 {
@@ -96,6 +187,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradientShift 9s ease-in-out infinite;
         }
 
         .hero p {
@@ -104,12 +196,14 @@
             max-width: 650px;
             margin: 0 auto 40px auto;
             line-height: 1.7;
+            animation: fadeInUp 0.8s ease 0.25s both;
         }
         .hero-actions {
             display: flex;
             gap: 16px;
             justify-content: center;
             flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease 0.4s both;
         }
         .btn-hero-primary {
             background: linear-gradient(135deg, #6fbfff, #4dd4ac);
@@ -119,7 +213,17 @@
             display: inline-flex; align-items: center; gap: 8px;
             transition: opacity 0.2s, transform 0.2s;
             box-shadow: 0 8px 30px rgba(111,191,255,0.25);
+            position: relative; overflow: hidden;
         }
+        .btn-hero-primary::before {
+            content: "";
+            position: absolute; top: 0; left: -60%;
+            width: 45%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.55), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.65s ease;
+        }
+        .btn-hero-primary:hover::before { left: 130%; }
         .btn-hero-primary:hover { opacity: 0.9; transform: translateY(-2px); color: #0f1117; }
         .btn-hero-secondary {
             background: transparent;
@@ -138,6 +242,14 @@
             border-top: 1px solid #1c2233;
             border-bottom: 1px solid #1c2233;
         }
+        /* ── SCROLL REVEAL ── */
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .reveal-up.is-visible { opacity: 1; transform: translateY(0); }
+
         .stat-item { text-align: center; }
         .stat-number {
             font-size: 2.5rem; font-weight: 800;
@@ -186,7 +298,13 @@
         .feature-desc { color: #6b7280; font-size: 0.88rem; line-height: 1.65; }
 
         /* ── COMMENT CA MARCHE ── */
-        .how-section { padding: 100px 0; background: #0a0d13; }
+        .how-section {
+            padding: 100px 0; background: #0a0d13;
+            background-image:
+                linear-gradient(rgba(111,191,255,0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(111,191,255,0.045) 1px, transparent 1px);
+            background-size: 42px 42px;
+        }
         .step-number {
             width: 40px; height: 40px; border-radius: 50%;
             background: linear-gradient(135deg, #6fbfff, #4dd4ac);
@@ -194,6 +312,7 @@
             display: flex; align-items: center; justify-content: center;
             margin-bottom: 16px; flex-shrink: 0;
         }
+        .reveal-up.is-visible .step-number { animation: stepPulse 0.7s ease; }
         .step-card {
             background: #161b27; border: 1px solid #2a2f3e;
             border-radius: 12px; padding: 28px; height: 100%;
@@ -206,7 +325,16 @@
             background: #0f1117;
             padding: 160px 0 180px 0;
             text-align: center;
+            position: relative;
+            overflow: hidden;
         }
+        .final-cta-section::before {
+            content: "";
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 60% 50% at 50% 100%, rgba(77,212,172,0.08), transparent 70%);
+            pointer-events: none;
+        }
+        .final-cta-section .container { position: relative; z-index: 1; }
         .final-cta-section h2 {
             font-size: clamp(2rem, 5vw, 3rem);
             font-weight: 800;
@@ -219,6 +347,18 @@
             max-width: 600px;
             margin: 0 auto 40px auto;
         }
+        .vault-lock-final {
+            display: block;
+            margin: 0 auto 28px;
+            filter: drop-shadow(0 10px 25px rgba(111,191,255,0.25));
+        }
+        .vault-lock-final .shackle {
+            transform: rotate(-48deg);
+            transform-origin: 38px 62px;
+            transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .vault-lock-final.is-locked .shackle { transform: rotate(0deg); }
+        .vault-lock-final.is-locked { animation: lockFlash 0.8s ease 0.5s; }
 
         /* ── FOOTER ── */
         .landing-footer {
@@ -233,6 +373,43 @@
             transition: color 0.2s;
         }
         .footer-links a:hover { color: #9ca3af; }
+
+        /* ── KEYFRAMES ── */
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp   { from { opacity: 0; transform: translateY(20px); }  to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn    { from { opacity: 0; transform: scale(0.85); }       to { opacity: 1; transform: scale(1); } }
+        @keyframes pulseGlow  { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.12); opacity: 1; } }
+        @keyframes rotateSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(111,191,255,0); }
+            50%      { box-shadow: 0 0 16px 3px rgba(111,191,255,0.35); }
+        }
+        @keyframes stepPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(111,191,255,0.55); }
+            60%  { box-shadow: 0 0 0 14px rgba(111,191,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(111,191,255,0); }
+        }
+        @keyframes lockFlash {
+            0%, 100% { filter: drop-shadow(0 10px 25px rgba(111,191,255,0.25)); }
+            50%      { filter: drop-shadow(0 0 35px rgba(77,212,172,0.85)); }
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; }
+            100% { transform: translateY(-780px) rotate(20deg); opacity: 0; }
+        }
+
+        /* ── ACCESSIBILITY: respect reduced motion ── */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -242,32 +419,24 @@
    ══════════════════════════════════════════════════════ #}
 <nav class="landing-nav">
     <div class="container">
-        <a href="{{ path('app_landing') }}" style="text-decoration:none; display:flex; align-items:center; gap:12px;">
+        <a href="{{ path('app_landing') }}" class="brand-link">
 
             {# ── Logo dynamique (navbar) ── #}
-            {% if app_logo is defined and app_logo is not empty %}
-                <img src="{{ asset('uploads/logos/' ~ app_logo) }}"
-                     alt="{{ app_name }}"
-                     style="width:42px; height:48px; object-fit:contain; flex-shrink:0;">
-            {% else %}
-                <div style="
-                    width:42px; height:48px;
-                    display:grid; place-items:center;
-                    color:#dff3ff; font-size:1.15rem;
-                    background: radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
-                                linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
-                    clip-path: polygon(50% 0, 92% 18%, 82% 82%, 50% 100%, 18% 82%, 8% 18%);
-                    box-shadow: 0 12px 30px rgba(48,107,255,0.28), inset 0 0 0 2px rgba(255,255,255,0.18);
-                    flex-shrink:0;">
-                    <i class="fas fa-lock"></i>
-                </div>
-            {% endif %}
+            <div class="logo-orb">
+                {% if app_logo is defined and app_logo is not empty %}
+                    <img src="{{ asset('uploads/logos/' ~ app_logo) }}"
+                         alt="{{ app_name }}"
+                         class="logo-img">
+                {% else %}
+                    <div class="logo-shield">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                {% endif %}
+            </div>
 
             <div>
-                <div style="font-size:1.3rem; font-weight:700; color:var(--brand-primary, #6fbfff); line-height:1;">
-                    {{ app_name }}
-                </div>
-                <div style="color:#6b7280; font-size:0.75rem; margin-top:2px;">{{ app_slogan }}</div>
+                <div class="brand-name">{{ app_name }}</div>
+                <div class="brand-slogan">{{ app_slogan }}</div>
             </div>
         </a>
 
@@ -288,12 +457,26 @@
    HERO
    ══════════════════════════════════════════════════════ #}
 <section class="hero">
-    <div class="hero-bg"></div>
+    <div class="hero-bg" aria-hidden="true">
+        <div class="vault-dial"></div>
+        <div class="vault-dial vault-dial--inner"></div>
+        <div class="vault-core"></div>
+        <canvas id="vaultCanvas" class="vault-canvas"></canvas>
+        <div class="ambient-icons">
+            <i class="fas fa-key ambient-icon i1"></i>
+            <i class="fas fa-lock ambient-icon i2"></i>
+            <i class="fas fa-fingerprint ambient-icon i3"></i>
+            <i class="fas fa-shield-halved ambient-icon i4"></i>
+            <i class="fas fa-key ambient-icon i5"></i>
+            <i class="fas fa-lock ambient-icon i6"></i>
+        </div>
+    </div>
     <div class="container">
         <div class="hero-badge">
             <i class="fas fa-shield-alt"></i> Architecture Zero-Knowledge
         </div>
-        <h1>Un seul endroit pour tout ce que vous ne pouvez pas perdre</h1>
+        <h1 id="heroTitle">Un seul endroit pour tout ce que vous ne pouvez pas
+        perdre</h1>
         <p>Vos accès, vos mots de passe et vos données privées — stockés en sécurité absolue et accessibles partout à la demande.</p>
         <div class="hero-actions">
             <a href="{{ path('app_register') }}" class="btn-hero-primary">
@@ -313,26 +496,26 @@
     <div class="container">
         <div class="row g-4">
             <div class="col-6 col-md-3">
-                <div class="stat-item">
-                    <div class="stat-number">256</div>
+                <div class="stat-item reveal-up">
+                    <div class="stat-number" data-target="256">0</div>
                     <div class="stat-label">Chiffrement de pointe</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="stat-item">
-                    <div class="stat-number">4</div>
+                <div class="stat-item reveal-up">
+                    <div class="stat-number" data-target="4">0</div>
                     <div class="stat-label">Types de secrets gérés</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="stat-item">
-                    <div class="stat-number">0</div>
+                <div class="stat-item reveal-up">
+                    <div class="stat-number" data-target="0">0</div>
                     <div class="stat-label">Connaissance de vos données</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="stat-item">
-                    <div class="stat-number">100%</div>
+                <div class="stat-item reveal-up">
+                    <div class="stat-number" data-target="100" data-suffix="%">0</div>
                     <div class="stat-label">Transparent & Sécurisé</div>
                 </div>
             </div>
@@ -352,7 +535,7 @@
         </div>
         <div class="row g-4">
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card">
+                <div class="feature-card reveal-up">
                     <div class="feature-icon" style="background:#1e3a5f; color:#6fbfff;">
                         <i class="fas fa-lock"></i>
                     </div>
@@ -361,7 +544,7 @@
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card">
+                <div class="feature-card reveal-up">
                     <div class="feature-icon" style="background:#1a3a2a; color:#4dd4ac;">
                         <i class="fas fa-key"></i>
                     </div>
@@ -370,7 +553,7 @@
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card">
+                <div class="feature-card reveal-up">
                     <div class="feature-icon" style="background:#2a1a3a; color:#c084fc;">
                         <i class="fas fa-users-cog"></i>
                     </div>
@@ -393,28 +576,28 @@
         </div>
         <div class="row g-4">
             <div class="col-md-6 col-lg-3">
-                <div class="step-card">
+                <div class="step-card reveal-up">
                     <div class="step-number">1</div>
                     <div class="step-title">Créez votre compte</div>
                     <div class="step-desc">Inscrivez-vous avec votre email et définissez un mot de passe maître fort. Il reste privé et confidentiel.</div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="step-card">
+                <div class="step-card reveal-up">
                     <div class="step-number">2</div>
                     <div class="step-title">Ajoutez vos secrets</div>
                     <div class="step-desc">Créez vos fiches pour vos mots de passe ou notes. Tout est immédiatement chiffré sur votre appareil.</div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="step-card">
+                <div class="step-card reveal-up">
                     <div class="step-number">3</div>
                     <div class="step-title">Accédez en sécurité</div>
                     <div class="step-desc">Déchiffrez vos secrets à la demande avec votre mot de passe. Rien n'est conservé sur nos serveurs après votre déconnexion.</div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="step-card">
+                <div class="step-card reveal-up">
                     <div class="step-number">4</div>
                     <div class="step-title">Résilience & Continuité</div>
                     <div class="step-desc">Même en cas de compromission totale de la base de données, vos données restent mathématiquement indéchiffrables.</div>
@@ -429,11 +612,27 @@
    ══════════════════════════════════════════════════════ #}
 <section class="final-cta-section">
     <div class="container">
-        <h2>Garantissez la sécurité de vos secrets dès aujourd'hui</h2>
-        <p>Configurez votre espace hautement sécurisé en moins de deux minutes et reprenez le contrôle complet de vos données.</p>
-        <a href="{{ path('app_register') }}" class="btn-hero-primary">
-            <i class="fas fa-rocket me-2"></i> Commencer maintenant
-        </a>
+        <div class="reveal-up">
+            <svg class="vault-lock-final" id="finalLock" viewBox="0 0 120 140" width="92" height="108" aria-hidden="true">
+                <defs>
+                    <linearGradient id="lockBodyGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#6fbfff"/>
+                        <stop offset="1" stop-color="#4dd4ac"/>
+                    </linearGradient>
+                </defs>
+                <g class="shackle">
+                    <path d="M38 62 V37 a22 22 0 0 1 44 0 V62" fill="none" stroke="url(#lockBodyGrad)" stroke-width="12" stroke-linecap="round"/>
+                </g>
+                <rect x="20" y="60" width="80" height="58" rx="10" fill="url(#lockBodyGrad)"/>
+                <circle cx="60" cy="86" r="7" fill="#0f1117"/>
+                <rect x="56" y="86" width="8" height="18" rx="3" fill="#0f1117"/>
+            </svg>
+            <h2>Garantissez la sécurité de vos secrets dès aujourd'hui</h2>
+            <p>Configurez votre espace hautement sécurisé en moins de deux minutes et reprenez le contrôle complet de vos données.</p>
+            <a href="{{ path('app_register') }}" class="btn-hero-primary">
+                <i class="fas fa-rocket me-2"></i> Commencer maintenant
+            </a>
+        </div>
     </div>
 </section>
 
@@ -447,29 +646,23 @@
                 <div style="display:flex; align-items:center; gap:10px;">
 
                     {# ── Logo dynamique (footer) ── #}
-                    {% if app_logo is defined and app_logo is not empty %}
-                        <img src="{{ asset('uploads/logos/' ~ app_logo) }}"
-                             alt="{{ app_name }}"
-                             style="width:34px; height:38px; object-fit:contain; flex-shrink:0;">
-                    {% else %}
-                        <div style="
-                            width:34px; height:38px;
-                            display:grid; place-items:center;
-                            color:#dff3ff; font-size:0.95rem;
-                            background: radial-gradient(circle at 50% 28%, rgba(116,255,221,0.25), transparent 34%),
-                                        linear-gradient(150deg, #306bff, #7d3cff 58%, #15d1ba);
-                            clip-path: polygon(50% 0, 92% 18%, 82% 82%, 50% 100%, 18% 82%, 8% 18%);
-                            box-shadow: 0 8px 20px rgba(48,107,255,0.28);
-                            flex-shrink:0;">
-                            <i class="fas fa-lock"></i>
-                        </div>
-                    {% endif %}
+                    <div class="logo-orb is-small">
+                        {% if app_logo is defined and app_logo is not empty %}
+                            <img src="{{ asset('uploads/logos/' ~ app_logo) }}"
+                                 alt="{{ app_name }}"
+                                 class="logo-img is-small">
+                        {% else %}
+                            <div class="logo-shield is-small">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                        {% endif %}
+                    </div>
 
                     <div>
-                        <div style="font-size:1.1rem; font-weight:700; color:var(--brand-primary, #6fbfff); line-height:1;">
+                        <div class="brand-name is-small">
                             {{ app_name }}
                         </div>
-                        <div style="color:#6b7280; font-size:0.72rem; margin-top:2px;">{{ app_slogan }}</div>
+                        <div class="brand-slogan is-small">{{ app_slogan }}</div>
                     </div>
                 </div>
             </div>
@@ -482,5 +675,236 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ── Navbar: shrink + solidify on scroll ── */
+    function initNavScroll() {
+        var nav = document.querySelector('.landing-nav');
+        if (!nav) return;
+        function onScroll() {
+            nav.classList.toggle('is-scrolled', window.scrollY > 10);
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    }
+
+    /* ── Hero title: cascading "decrypt" reveal ── */
+    function initDecryptTitle() {
+        var el = document.getElementById('heroTitle');
+        if (!el) return;
+        var finalText = el.textContent;
+        if (reduceMotion) return;
+
+        var glyphs = '01#%&$ABCDEF*+/\\<>';
+        var letters = finalText.split('');
+        el.textContent = '';
+        var items = letters.map(function (ch) {
+            var span = document.createElement('span');
+            span.style.display = 'inline-block';
+            span.textContent = ch === ' ' ? '\u00A0' : ch;
+            el.appendChild(span);
+            return { span: span, ch: ch };
+        });
+
+        items.forEach(function (item, idx) {
+            if (item.ch === ' ') return;
+            var frame = 0;
+            var totalFrames = 9 + Math.floor(Math.random() * 6);
+            var delay = idx * 26;
+            setTimeout(function () {
+                var interval = setInterval(function () {
+                    frame++;
+                    if (frame >= totalFrames) {
+                        item.span.textContent = item.ch;
+                        clearInterval(interval);
+                    } else {
+                        item.span.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+                    }
+                }, 34);
+            }, delay);
+        });
+    }
+
+    /* ── Hero background: drifting encrypted-data particle network ── */
+    function initVaultCanvas() {
+        var canvas = document.getElementById('vaultCanvas');
+        if (!canvas || reduceMotion) return;
+        var ctx = canvas.getContext('2d');
+        var particles = [];
+        var w, h, dpr;
+
+        function resize() {
+            var rect = canvas.parentElement.getBoundingClientRect();
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = rect.width;
+            h = rect.height;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            initParticles();
+        }
+
+        function initParticles() {
+            var count = w < 640 ? 16 : (w < 1100 ? 26 : 40);
+            particles = [];
+            for (var i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 0.25,
+                    vy: (Math.random() - 0.5) * 0.25,
+                    r: Math.random() * 1.6 + 0.6
+                });
+            }
+        }
+
+        function step() {
+            ctx.clearRect(0, 0, w, h);
+            var maxDist = Math.min(w, h) * 0.18;
+            var i, j, a, b, dx, dy, dist;
+
+            for (i = 0; i < particles.length; i++) {
+                a = particles[i];
+                a.x += a.vx;
+                a.y += a.vy;
+                if (a.x < 0 || a.x > w) a.vx *= -1;
+                if (a.y < 0 || a.y > h) a.vy *= -1;
+            }
+            for (i = 0; i < particles.length; i++) {
+                for (j = i + 1; j < particles.length; j++) {
+                    a = particles[i];
+                    b = particles[j];
+                    dx = a.x - b.x;
+                    dy = a.y - b.y;
+                    dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < maxDist) {
+                        ctx.strokeStyle = 'rgba(111,191,255,' + ((1 - dist / maxDist) * 0.18) + ')';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            for (i = 0; i < particles.length; i++) {
+                a = particles[i];
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(77,212,172,0.55)';
+                ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            requestAnimationFrame(step);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        requestAnimationFrame(step);
+    }
+
+    /* ── Scroll reveal for cards, stats and the final CTA ── */
+    function initRevealOnScroll() {
+        var items = document.querySelectorAll('.reveal-up');
+        if (!items.length) return;
+
+        if (reduceMotion || typeof IntersectionObserver === 'undefined') {
+            items.forEach(function (el) { el.classList.add('is-visible'); });
+            return;
+        }
+
+        items.forEach(function (el, i) {
+            var delay = (i % 4) * 0.12 + 's';
+            el.style.transitionDelay = delay;
+            el.style.animationDelay = delay;
+        });
+
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        items.forEach(function (el) { observer.observe(el); });
+    }
+
+    /* ── Stat numbers count up when scrolled into view ── */
+    function initStatCounters() {
+        var counters = document.querySelectorAll('.stat-number[data-target]');
+        if (!counters.length) return;
+
+        function animateCounter(el) {
+            var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+            var suffix = el.getAttribute('data-suffix') || '';
+            if (reduceMotion || target === 0) {
+                el.textContent = target + suffix;
+                return;
+            }
+            var duration = 1400;
+            var start = null;
+            function tick(now) {
+                if (start === null) start = now;
+                var progress = Math.min((now - start) / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(eased * target) + suffix;
+                if (progress < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        if (typeof IntersectionObserver === 'undefined') {
+            counters.forEach(animateCounter);
+            return;
+        }
+
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    animateCounter(entry.target);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.4 });
+
+        counters.forEach(function (el) { observer.observe(el); });
+    }
+
+    /* ── Final CTA: the vault clicks shut once it comes into view ── */
+    function initFinalLock() {
+        var lock = document.getElementById('finalLock');
+        var section = document.querySelector('.final-cta-section');
+        if (!lock || !section) return;
+
+        if (reduceMotion || typeof IntersectionObserver === 'undefined') {
+            lock.classList.add('is-locked');
+            return;
+        }
+
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    setTimeout(function () { lock.classList.add('is-locked'); }, 250);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        observer.observe(section);
+    }
+
+    initNavScroll();
+    initDecryptTitle();
+    initVaultCanvas();
+    initRevealOnScroll();
+    initStatCounters();
+    initFinalLock();
+});
+</script>
 </body>
 </html>

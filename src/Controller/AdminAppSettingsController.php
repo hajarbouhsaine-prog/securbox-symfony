@@ -92,7 +92,6 @@ class AdminAppSettingsController extends AbstractController
             }
             /** @var \App\Entity\User $adminUser */
             $adminUser = $this->getUser();
-            /** @var \App\Entity\User $adminUser */ $adminUser = $this->getUser();
             $this->logAction($adminUser, 'ADMIN_SETTINGS_CHANGED', $request, $changes);
 
             return $this->redirectToRoute('app_admin_app_settings');
@@ -129,7 +128,8 @@ class AdminAppSettingsController extends AbstractController
         $this->addFlash('success', 'Logo réinitialisé.');
 
         // AJOUTÉ : Log juste avant la redirection finale du reset logo
-        /** @var \App\Entity\User $adminUser */ $adminUser = $this->getUser();
+        /** @var \App\Entity\User $adminUser */
+        $adminUser = $this->getUser();
         $this->logAction($adminUser, 'ADMIN_SETTINGS_CHANGED', $request, 'Logo réinitialisé');
 
         return $this->redirectToRoute('app_admin_app_settings');

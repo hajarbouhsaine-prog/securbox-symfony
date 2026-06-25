@@ -108,94 +108,13 @@
             </div>
         </div>
 
-        {# ── LANGUAGE ── #}
-        <div class="sb-card" style="margin-bottom:20px;">
-            <div class="sb-card__header">
-                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-globe"></i></span>
-                <div>
-                    <h3>Langue</h3>
-                    <p class="sb-card__desc">Sélectionnez la langue d'affichage de l'application.</p>
-                </div>
-            </div>
 
-            {# Hidden radio inputs — JS sets checked based on window.SB_LOCALE #}
-            <input type="radio" name="language" id="lang_fr" value="fr" style="display:none;">
-            <input type="radio" name="language" id="lang_en" value="en" style="display:none;">
-            <input type="radio" name="language" id="lang_ar" value="ar" style="display:none;">
 
-            <div class="app-lang-grid">
 
-                <div class="app-lang-card" id="lc_fr" onclick="selectLang('fr')">
-                    <span class="app-lang-flag">🇫🇷</span>
-                    <span class="app-lang-name">Français</span>
-                    <i class="fas fa-check app-lang-check" id="lcheck_fr" style="display:none;"></i>
-                </div>
 
-                <div class="app-lang-card" id="lc_en" onclick="selectLang('en')">
-                    <span class="app-lang-flag">🇬🇧</span>
-                    <span class="app-lang-name">English</span>
-                    <i class="fas fa-check app-lang-check" id="lcheck_en" style="display:none;"></i>
-                </div>
 
-                <div class="app-lang-card" id="lc_ar" onclick="selectLang('ar')">
-                    <span class="app-lang-flag">🇲🇦</span>
-                    <span class="app-lang-name">العربية</span>
-                    <i class="fas fa-check app-lang-check" id="lcheck_ar" style="display:none;"></i>
-                </div>
 
-            </div>
-        </div>
 
-        {# ── OPTIONS D'AFFICHAGE ── #}
-        <div class="sb-card" style="margin-bottom:24px;">
-            <div class="sb-card__header">
-                <span class="sb-card__icon sb-card__icon--blue"><i class="fas fa-sliders-h"></i></span>
-                <div>
-                    <h3>Options d'affichage</h3>
-                    <p class="sb-card__desc">Ajustez les préférences de rendu de vos secrets.</p>
-                </div>
-            </div>
-
-            {# OPTION 1 — Website icons #}
-            <div class="app-toggle-item">
-                <div class="app-toggle-info">
-                    <div class="app-toggle-title">
-                        <i class="fas fa-image" style="color:var(--accent-blue); margin-right:6px; font-size:0.82rem;"></i>
-                        Icônes des sites web
-                    </div>
-                    <div class="app-toggle-desc">
-                        Affiche le favicon (petite icône) du site web associé à chaque secret de type
-                        <strong>Mot de passe</strong>. Si activé, l'icône est chargée depuis le domaine du site.
-                        Si désactivé, une icône générique est affichée à la place.
-                    </div>
-                </div>
-                <label class="app-toggle-switch">
-                    <input type="checkbox" name="show_website_icons" value="1"
-                           {{ app.session.get('settings_appearance_show_icons', true) ? 'checked' : '' }}>
-                    <span class="app-toggle-slider"></span>
-                </label>
-            </div>
-
-            {# OPTION 2 — Mask passwords #}
-            <div class="app-toggle-item">
-                <div class="app-toggle-info">
-                    <div class="app-toggle-title">
-                        <i class="fas fa-eye-slash" style="color:var(--accent-purple); margin-right:6px; font-size:0.82rem;"></i>
-                        Masquer les mots de passe par défaut
-                    </div>
-                    <div class="app-toggle-desc">
-                        Quand vous ouvrez un secret, le champ <strong>mot de passe</strong> s'affiche en
-                        <span style="letter-spacing:3px; color:var(--text-muted);">••••••••</span>
-                        par défaut. Vous devez cliquer sur l'œil pour le révéler.
-                        Si désactivé, le mot de passe est visible immédiatement après déchiffrement.
-                    </div>
-                </div>
-                <label class="app-toggle-switch">
-                    <input type="checkbox" name="mask_passwords" value="1"
-                           {{ app.session.get('settings_appearance_mask_pwd', true) ? 'checked' : '' }}>
-                    <span class="app-toggle-slider"></span>
-                </label>
-            </div>
 
         </div>
 
