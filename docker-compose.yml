@@ -1,8 +1,5 @@
-version: '3.8'
-
 services:
 
-  # ─── Application PHP/Symfony ───────────────────────────────────────────────
   app:
     build:
       context: .
@@ -27,7 +24,6 @@ services:
       db:
         condition: service_healthy
 
-  # ─── Serveur Web Nginx ─────────────────────────────────────────────────────
   nginx:
     image: nginx:alpine
     container_name: securbox_nginx
@@ -42,7 +38,6 @@ services:
     depends_on:
       - app
 
-  # ─── Base de données MySQL ─────────────────────────────────────────────────
   db:
     image: mysql:8.0
     container_name: securbox_db
@@ -53,19 +48,18 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     ports:
-      - "3307:3306"       # 3307 côté hôte pour éviter les conflits avec XAMPP
+      - "3307:3306"
     volumes:
       - securbox_mysql_data:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     networks:
       - securbox_network
 
-  # ─── phpMyAdmin (optionnel, pratique pour le superviseur) ─────────────────
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: securbox_phpmyadmin
@@ -81,12 +75,10 @@ services:
     depends_on:
       - db
 
-# ─── Volumes persistants ───────────────────────────────────────────────────
 volumes:
   securbox_mysql_data:
     driver: local
 
-# ─── Réseau interne ────────────────────────────────────────────────────────
 networks:
   securbox_network:
     driver: bridge
